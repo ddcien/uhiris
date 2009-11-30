@@ -1,15 +1,8 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+
 PROJECT(uhiris)
 
-FIND_PACKAGE(OpenCV)
+FIND_PACKAGE(OpenCV REQUIRED)
 
-SET(iris_SRCS
-	src/iris_main.cxx
-	
-)
-
-SET(iris_HDRS
-
-)
-
-ADD_EXECUTABLE(iris ${iris_SRCS} ${iris_HDRS})
-TARGET_LINK_LIBRARIES(iris ${OpenCV_LIBS})
+ADD_SUBDIRECTORY(houghiris)
+ADD_SUBDIRECTORY(topographic)
