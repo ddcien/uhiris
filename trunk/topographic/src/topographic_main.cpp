@@ -4,20 +4,35 @@
 using std::cout;
 using std::endl;
 
-inline double ChebyshevZero(double x) {
-	return 1.0;
+inline double *ChebyshevZero(int N) {
+	int num_of_elem = 2*N+1;
+	double *kernel = new double [num_of_elem];
+	double const_a = 3*N*N+3*N-1;
+	double const_b = (2*N-1)*(2*N+1)*(2*N+3);
+	for (int i = 0; i < num_of_elem; ++i)
+		kernel[i] = 3*(5*i*i-const_a)/const_b;
+	return kernel;
 }
 
-inline double ChebyshevFirst(double x) {
-	return 2 * x;
+inline double *ChebyshevFirst(int N) {
+	int num_of_elem = 2*N+1;
+	double *kernel = new double [num_of_elem];
+	double const_a = 3*N*N+3*N-1;
+	double const_b = 3*pow(static_cast<double>(N),4)+6*pow(static_cast<double>(N),3)-3*N+1;
+	double const_c = (N-1)*N*(N+1)*(N+2)*(2*N-1)*(2*N+1)*(2*N+3);
+	for (int i = 0; i < num_of_elem; ++i)
+		kernel[i] = 5*(7*const_a*pow(static_cast<double>(i),3)-5*const_b*i)/const_c;
+	return kernel;
 }
 
-inline double ChebyshevSecond(double x, int N) {
-	return 6 * pow(x, 2.0) + 2 * N * (N + 1);
-}
-
-inline double ChebyshevThird(double x, int N) {
-	return 20 * pow(x, 3.0) - 4 * (3 * pow(N, 2.0) + 3 * N - 1) * x;
+inline double *ChebyshevSecond(int N) {
+	int num_of_elem = 2*N+1;
+	double *kernel = new double [num_of_elem];
+	double const_a = N*(N+1);
+	double const_b = N*(N+1)*(2*N-1)*(2*N+1)*(2*N+3);
+	for (int i = 0; i < num_of_elem; ++i)
+		kernel[i] = 30*(3*i*i-const_a)/const_b;
+	return kernel;
 }
 
 int main(int argc, char** argv) {
@@ -43,7 +58,7 @@ int main(int argc, char** argv) {
 	//	cout << cvmGet(x, i, 0) << " ";
 	//cout << endl;
 
-	int neighborhood_size = 9;
+	int neighborhood_size = 5;
 	assert(neighborhood_size % 2 == 1);
 	int N = (neighborhood_size - 1) / 2;
 
