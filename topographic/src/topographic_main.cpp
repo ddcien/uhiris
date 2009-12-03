@@ -86,8 +86,7 @@ int main(int argc, char** argv) {
 	//namedWindow("Gray Image", CV_WINDOW_AUTOSIZE);
 	namedWindow("Gaussian Smoothed", CV_WINDOW_AUTOSIZE);
 	//namedWindow("Derivative", CV_WINDOW_AUTOSIZE);
-	namedWindow("Candidates", CV_WINDOW_AUTOSIZE);
-
+	
 //	for (;;) {
 
 		Mat rgb, gray, img;
@@ -115,9 +114,8 @@ int main(int argc, char** argv) {
 				eigen(hessian, eigenvalues);
 				double mag = sqrt(pow(f10x.at<double>(i,j), 2)+pow(f01y.at<double>(i,j), 2));
 				if (mag == 0 && eigenvalues.at<double>(0,0) > 0 && eigenvalues.at<double>(1,0) > 0) {
-					circle(rgb, Point(i,j), 10, CV_RGB(0,255,0), -1);
-					cout << Point(i,j).x << " " << Point(i,j).y << endl;
-					label_map.at<uchar>(i,j) = 255;
+					circle(rgb, Point(j,i), 5, CV_RGB(0,255,0));
+					//cout << Point(i,j).x << " " << Point(i,j).y << endl;
 				}
 			}
 		
@@ -125,7 +123,6 @@ int main(int argc, char** argv) {
 		//imshow("Gray Image", gray);
 		imshow("Gaussian Smoothed", img);
 		//imshow("Derivative", f11xy);
-		imshow("Candidates", label_map);
 		waitKey();
 	//	if (waitKey(30) >= 0) break;
 	//}
