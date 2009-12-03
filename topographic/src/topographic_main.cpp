@@ -64,7 +64,7 @@ inline Mat ChebyshevSecond(int N) {
 
 int main(int argc, char** argv) {
 
-	int neighborhood_size = 5;
+	int neighborhood_size = 21;
 	assert(neighborhood_size % 2 == 1);
 	int N = (neighborhood_size - 1) / 2;
 
@@ -77,6 +77,13 @@ int main(int argc, char** argv) {
 	Mat h11 = h1 * h1.t();
 	Mat h02 = h0 * h2.t();
 
+	cvSave("h20.txt",&CvMat(h20));
+	PrintMat(&CvMat(h0));
+	PrintMat(&CvMat(h1));
+	PrintMat(&CvMat(h2));
+	PrintMat(&CvMat(h20));
+	PrintMat(&CvMat(h02));
+
 	//VideoCapture cap(0);
 	//if (!cap.isOpened()) return -1;
 	//cap.set(CV_CAP_PROP_FRAME_WIDTH, 320);
@@ -85,15 +92,18 @@ int main(int argc, char** argv) {
 	namedWindow("Input RGB Image", CV_WINDOW_AUTOSIZE);
 	//namedWindow("Gray Image", CV_WINDOW_AUTOSIZE);
 	namedWindow("Gaussian Smoothed", CV_WINDOW_AUTOSIZE);
-	//namedWindow("Derivative", CV_WINDOW_AUTOSIZE);
+	namedWindow("Magnitude", CV_WINDOW_AUTOSIZE);
+	namedWindow("EV1", CV_WINDOW_AUTOSIZE);
+	namedWindow("EV2", CV_WINDOW_AUTOSIZE);
 	
 //	for (;;) {
 
-		Mat rgb, gray, img;
+		Mat rgb, gray, img, tmp;
 		rgb = imread(argv[1]);
 //		cap >> rgb;
 		cvtColor(rgb, gray, CV_RGB2GRAY);
-		GaussianBlur(gray, img, Size(15,15), 2.5);
+		GaussianBlur(gray, tmp, Size(25, 25), 20);
+		GaussianBlur(tmp, img, Size(25, 25), 20);
 
 		Mat img_64fc1, f20xy, f11xy, f02xy, f10x, f01y;
 		img.convertTo(img_64fc1, CV_64FC1);
@@ -104,6 +114,9 @@ int main(int argc, char** argv) {
 		filter2D(img_64fc1, f02xy, -1, h02);
 		
 		Mat label_map(img.rows, img.cols, CV_8UC1, Scalar(0));
+		Mat mag(img.rows, img.cols, CV_64FC1);
+		Mat ev1(img.rows, img.cols, CV_64FC1);
+		Mat ev2(img.rows, img.cols, CV_64FC1);
 		for (int i = 0; i < img.rows; ++i)
 			for (int j = 0; j < img.cols; ++j) {
 				Mat hessian = cvCreateMat(2, 2, CV_64FC1), eigenvalues;
@@ -112,8 +125,10 @@ int main(int argc, char** argv) {
 				hessian.at<double>(1,0) = f11xy.at<double>(i,j);
 				hessian.at<double>(1,1) = f02xy.at<double>(i,j);
 				eigen(hessian, eigenvalues);
-				double mag = sqrt(pow(f10x.at<double>(i,j), 2)+pow(f01y.at<double>(i,j), 2));
-				if (mag == 0 && eigenvalues.at<double>(0,0) > 0 && eigenvalues.at<double>(1,0) > 0) {
+				mag.at<double>(i,j) = sqrt(pow(f10x.at<double>(i,j), 2)+pow(f01y.at<double>(i,j), 2));
+				ev1.at<double>(i,j) = eigenvalues.at<double>(0,0);
+				ev2.at<double>(i,j) = eigenvalues.at<double>(1,0);
+				if (mag.at<double>(i,j) < 0.1 && eigenvalues.at<double>(0,0) > 0.1 && eigenvalues.at<double>(1,0) > 0.1) {
 					circle(rgb, Point(j,i), 5, CV_RGB(0,255,0));
 					//cout << Point(i,j).x << " " << Point(i,j).y << endl;
 				}
@@ -122,7 +137,9 @@ int main(int argc, char** argv) {
 		imshow("Input RGB Image", rgb);
 		//imshow("Gray Image", gray);
 		imshow("Gaussian Smoothed", img);
-		//imshow("Derivative", f11xy);
+		imshow("Magnitude", mag);
+		imshow("EV1", ev1);
+		imshow("EV2", ev2);
 		waitKey();
 	//	if (waitKey(30) >= 0) break;
 	//}
