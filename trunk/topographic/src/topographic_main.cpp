@@ -3,6 +3,7 @@
 #include <fstream>
 #include "cv.h"
 #include "highgui.h"
+#include "differential.h"
 
 using std::cout;
 using std::endl;
@@ -37,34 +38,6 @@ void PrintMat(CvMat *A)
 	printf("\n");
 }
 
-inline Mat ChebyshevZero(int N) {
-	Mat filter(2*N+1, 1, CV_32FC1);
-	double const_a = 3*N*N+3*N-1;
-	double const_b = (2*N-1)*(2*N+1)*(2*N+3);
-	for (int i = -N; i <= N; ++i)
-		filter.at<float>(i+N,0) = 3*(5*i*i-const_a)/const_b;
-	return filter;
-}
-
-inline Mat ChebyshevFirst(int N) {
-	Mat filter(2*N+1, 1, CV_32FC1);
-	double const_a = 3*N*N+3*N-1;
-	double const_b = 3*pow(static_cast<double>(N),4)+6*pow(static_cast<double>(N),3)-3*N+1;
-	double const_c = (N-1)*N*(N+1)*(N+2)*(2*N-1)*(2*N+1)*(2*N+3);
-	for (int i = -N; i <= N; ++i)
-		filter.at<float>(i+N,0) = 5*(7*const_a*pow(static_cast<double>(i),3)-5*const_b*i)/const_c;
-	return filter;
-}
-
-inline Mat ChebyshevSecond(int N) {
-	Mat filter(2*N+1, 1, CV_32FC1);
-	double const_a = N*(N+1);
-	double const_b = N*(N+1)*(2*N-1)*(2*N+1)*(2*N+3);
-	for (int i = -N; i <= N; ++i)
-		filter.at<float>(i+N,0) = 30*(3*i*i-const_a)/const_b;
-	return filter;
-}
-
 void DumpMatDouble(const char* filename, const Mat& mat) {
 	ofstream fout;
 	fout.open(filename, ofstream::out);
@@ -88,9 +61,7 @@ int main(int argc, char** argv) {
 	assert(neighborhood_size % 2 == 1);
 	int N = (neighborhood_size - 1) / 2;
 
-	/** Filters from MATLAB
-		http://www.mathworks.com/matlabcentral/fileexchange/9123-2-d-savitzky-golay-smoothing-and-differentiation-filter
-	*/
+	
 	//float Size5Order1X1Y0[25] = {0.017143,0.0085714,-0,-0.0085714,-0.017143,
 	//							 -0.068571,-0.034286,0,0.034286,0.068571,
 	//							 -0.097143,-0.048571,0,0.048571,0.097143,
@@ -122,9 +93,7 @@ int main(int argc, char** argv) {
 	//Mat h01(5,5,CV_32FC1,Size5Order1X0Y1);
 	//Mat h02(5,5,CV_32FC1,Size5Order2X0Y2);
 
-	/** Filters from 
-		http://research.microsoft.com/en-us/um/people/jckrumm/SavGol/SavGol.htm
-	*/
+	
 	//float fSavGolSize5Order1X1Y0[25] = {-0.04000000f,-0.02000000f,0.00000000f,0.02000000f,0.04000000f,-0.04000000f,-0.02000000f,0.00000000f,0.02000000f,0.04000000f,-0.04000000f,-0.02000000f,0.00000000f,0.02000000f,0.04000000f,-0.04000000f,-0.02000000f,0.00000000f,0.02000000f,0.04000000f,-0.04000000f,-0.02000000f,0.00000000f,0.02000000f,0.04000000f};
 	//float fSavGolSize5Order1X0Y1[25] = {-0.04000000f,-0.04000000f,-0.04000000f,-0.04000000f,-0.04000000f,-0.02000000f,-0.02000000f,-0.02000000f,-0.02000000f,-0.02000000f,0.00000000f,0.00000000f,0.00000000f,0.00000000f,0.00000000f,0.02000000f,0.02000000f,0.02000000f,0.02000000f,0.02000000f,0.04000000f,0.04000000f,0.04000000f,0.04000000f,0.04000000f};
 	//float fSavGolSize5Order2X2Y0[25] = {0.02857143f,-0.01428571f,-0.02857143f,-0.01428571f,0.02857143f,0.02857143f,-0.01428571f,-0.02857143f,-0.01428571f,0.02857143f,0.02857143f,-0.01428571f,-0.02857143f,-0.01428571f,0.02857143f,0.02857143f,-0.01428571f,-0.02857143f,-0.01428571f,0.02857143f,0.02857143f,-0.01428571f,-0.02857143f,-0.01428571f,0.02857143f};
@@ -137,14 +106,12 @@ int main(int argc, char** argv) {
 	//Mat h02(5,5,CV_32FC1,fSavGolSize5Order2X0Y2);
 
 	/** Generate filters */
-	Mat h0 = ChebyshevZero(N);
-	Mat h1 = ChebyshevFirst(N);
-	Mat h2 = ChebyshevSecond(N);
-	Mat h20 = -h2 * h0.t();
-	Mat h10 = -h1 * h0.t();
-	Mat h01 = -h0 * h1.t();
-	Mat h11 = -h1 * h1.t();
-	Mat h02 = -h0 * h2.t();
+	Differential filters(Differential::CHEBYSHEV);
+	Mat h20 = filters.get_h20();
+	Mat h10 = filters.get_h10();
+	Mat h01 = filters.get_h01();
+	Mat h11 = filters.get_h11();
+	Mat h02 = filters.get_h02();
 
 	//PrintMat(&CvMat(h20));
 	//PrintMat(&CvMat(h10));

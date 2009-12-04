@@ -1,5 +1,7 @@
 PROJECT(topographic)
 
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
+
 FILE(GLOB SRCS "src/*.c" "src/*.cpp")
 FILE(GLOB HDRS "include/*.h")
 
