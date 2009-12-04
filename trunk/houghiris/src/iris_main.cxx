@@ -27,12 +27,13 @@ int main(int argc, char ** argv){
 	Mat temp_out_frame;
 	Mat cropped_frame;
 	Mat cropped_frame_gray;
+        Mat thresholded_image;
 	Mat edges;
 	vector<Rect> detected_objects;
 	vector<Vec3f> circles; // hough circles
 
-	char * cropped_frame_window = "Cropped Frame";
-	namedWindow(cropped_frame_window, CV_WINDOW_AUTOSIZE);
+        char * debug_window = "Cropped Frame";
+        namedWindow(debug_window, CV_WINDOW_AUTOSIZE);
 
 	// load eye cascade
 	CascadeClassifier cascade(cascade_name);
@@ -72,6 +73,11 @@ int main(int argc, char ** argv){
 
 			// only use gray image (since Canny can only handle gray)
 			cvtColor(cropped_frame, cropped_frame_gray, CV_RGB2GRAY);
+
+                        // threshold image to remove skin locations
+                        threshold(cropped_frame_gray, thresholded_image, 0, 0, THRESH_TOZERO | THRESH_OTSU);
+                        imshow(debug_window, thresholded_image);
+                        waitKey(0);
 
 			// canny edge detection
 			edges = Mat(cropped_frame_gray.size(),cropped_frame_gray.type());
