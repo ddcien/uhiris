@@ -107,6 +107,7 @@ int main(int argc, char** argv) {
 
 	/** Generate filters */
 	Differential filters(Differential::CHEBYSHEV);
+	filters.ComputeFilterSet();
 	Mat h20 = filters.get_h20();
 	Mat h10 = filters.get_h10();
 	Mat h01 = filters.get_h01();
