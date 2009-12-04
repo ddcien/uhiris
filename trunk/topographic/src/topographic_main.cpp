@@ -152,11 +152,14 @@ int main(int argc, char** argv) {
 	//PrintMat(&CvMat(h11));
 	//PrintMat(&CvMat(h02));
 
+		
 	VideoCapture cap(0);
 	if (!cap.isOpened()) return -1;
 	cap.set(CV_CAP_PROP_FRAME_WIDTH, 320);
 	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
-
+	VideoWriter video_writer("out_frame.avi", CV_FOURCC('M','P','E','G'), 30, Size(320, 240), true);
+	if (!video_writer.isOpened()) return -1;
+	
 	namedWindow("Input RGB Image", CV_WINDOW_AUTOSIZE);
 	//namedWindow("Gaussian Smoothed", CV_WINDOW_AUTOSIZE);
 	//namedWindow("Magnitude", CV_WINDOW_AUTOSIZE);
@@ -202,6 +205,7 @@ int main(int argc, char** argv) {
 			}
 		
 		imshow("Input RGB Image", rgb);
+		video_writer << rgb;
 		//imshow("Gaussian Smoothed", img);
 		//imshow("Magnitude", mag);
 		//imshow("EV1", ev1);
