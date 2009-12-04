@@ -91,36 +91,36 @@ int main(int argc, char** argv) {
 	/** Filters from MATLAB
 		http://www.mathworks.com/matlabcentral/fileexchange/9123-2-d-savitzky-golay-smoothing-and-differentiation-filter
 	*/
-	float Size5Order1X1Y0[25] = {0.017143,0.0085714,-0,-0.0085714,-0.017143,
-								 -0.068571,-0.034286,0,0.034286,0.068571,
-								 -0.097143,-0.048571,0,0.048571,0.097143,
-								 -0.068571,-0.034286,0,0.034286,0.068571,
-								 0.017143,0.0085714,-0,-0.0085714,-0.017143};
-	float Size5Order2X2Y0[25] = {-0.02449,0.012245,0.02449,0.012245,-0.02449,
-								 0.097959,-0.04898,-0.097959,-0.04898,0.097959,
-								 0.13878,-0.069388,-0.13878,-0.069388,0.13878,
-								 0.097959,-0.04898,-0.097959,-0.04898,0.097959,
-								 -0.02449,0.012245,0.02449,0.012245,-0.02449};
-	float Size5Order2X1Y1[25] = {0.04,0.02,-0,-0.02,-0.04,
-								 0.02,0.01,-0,-0.01,-0.02,
-								 -0,-0,0,0,0,
-								 -0.02,-0.01,0,0.01,0.02,
-								 -0.04,-0.02,0,0.02,0.04};
-	float Size5Order2X0Y2[25] = {-0.02449,0.097959,0.13878,0.097959,-0.02449,
-								 0.012245,-0.04898,-0.069388,-0.04898,0.012245,
-								 0.02449,-0.097959,-0.13878,-0.097959,0.02449,
-								 0.012245,-0.04898,-0.069388,-0.04898,0.012245,
-								 -0.02449,0.097959,0.13878,0.097959,-0.02449};
-	float Size5Order1X0Y1[25] = {0.017143,-0.068571,-0.097143,-0.068571,0.017143,
-								 0.0085714,-0.034286,-0.048571,-0.034286,0.0085714,
-								 -0,0,0,0,-0,
-								 -0.0085714,0.034286,0.048571,0.034286,-0.0085714,
-								 -0.017143,0.068571,0.097143,0.068571,-0.017143};
-	Mat h10(5,5,CV_32FC1,Size5Order1X1Y0);
-	Mat h11(5,5,CV_32FC1,Size5Order2X1Y1);
-	Mat h20(5,5,CV_32FC1,Size5Order2X2Y0);
-	Mat h01(5,5,CV_32FC1,Size5Order1X0Y1);
-	Mat h02(5,5,CV_32FC1,Size5Order2X0Y2);
+	//float Size5Order1X1Y0[25] = {0.017143,0.0085714,-0,-0.0085714,-0.017143,
+	//							 -0.068571,-0.034286,0,0.034286,0.068571,
+	//							 -0.097143,-0.048571,0,0.048571,0.097143,
+	//							 -0.068571,-0.034286,0,0.034286,0.068571,
+	//							 0.017143,0.0085714,-0,-0.0085714,-0.017143};
+	//float Size5Order2X2Y0[25] = {-0.02449,0.012245,0.02449,0.012245,-0.02449,
+	//							 0.097959,-0.04898,-0.097959,-0.04898,0.097959,
+	//							 0.13878,-0.069388,-0.13878,-0.069388,0.13878,
+	//							 0.097959,-0.04898,-0.097959,-0.04898,0.097959,
+	//							 -0.02449,0.012245,0.02449,0.012245,-0.02449};
+	//float Size5Order2X1Y1[25] = {0.04,0.02,-0,-0.02,-0.04,
+	//							 0.02,0.01,-0,-0.01,-0.02,
+	//							 -0,-0,0,0,0,
+	//							 -0.02,-0.01,0,0.01,0.02,
+	//							 -0.04,-0.02,0,0.02,0.04};
+	//float Size5Order2X0Y2[25] = {-0.02449,0.097959,0.13878,0.097959,-0.02449,
+	//							 0.012245,-0.04898,-0.069388,-0.04898,0.012245,
+	//							 0.02449,-0.097959,-0.13878,-0.097959,0.02449,
+	//							 0.012245,-0.04898,-0.069388,-0.04898,0.012245,
+	//							 -0.02449,0.097959,0.13878,0.097959,-0.02449};
+	//float Size5Order1X0Y1[25] = {0.017143,-0.068571,-0.097143,-0.068571,0.017143,
+	//							 0.0085714,-0.034286,-0.048571,-0.034286,0.0085714,
+	//							 -0,0,0,0,-0,
+	//							 -0.0085714,0.034286,0.048571,0.034286,-0.0085714,
+	//							 -0.017143,0.068571,0.097143,0.068571,-0.017143};
+	//Mat h10(5,5,CV_32FC1,Size5Order1X1Y0);
+	//Mat h11(5,5,CV_32FC1,Size5Order2X1Y1);
+	//Mat h20(5,5,CV_32FC1,Size5Order2X2Y0);
+	//Mat h01(5,5,CV_32FC1,Size5Order1X0Y1);
+	//Mat h02(5,5,CV_32FC1,Size5Order2X0Y2);
 
 	/** Filters from 
 		http://research.microsoft.com/en-us/um/people/jckrumm/SavGol/SavGol.htm
@@ -137,14 +137,14 @@ int main(int argc, char** argv) {
 	//Mat h02(5,5,CV_32FC1,fSavGolSize5Order2X0Y2);
 
 	/** Generate filters */
-	//Mat h0 = ChebyshevZero(N);
-	//Mat h1 = ChebyshevFirst(N);
-	//Mat h2 = ChebyshevSecond(N);
-	//Mat h20 = h2 * h0.t();
-	//Mat h10 = h1 * h0.t();
-	//Mat h01 = h0 * h1.t();
-	//Mat h11 = h1 * h1.t();
-	//Mat h02 = h0 * h2.t();
+	Mat h0 = ChebyshevZero(N);
+	Mat h1 = ChebyshevFirst(N);
+	Mat h2 = ChebyshevSecond(N);
+	Mat h20 = -h2 * h0.t();
+	Mat h10 = -h1 * h0.t();
+	Mat h01 = -h0 * h1.t();
+	Mat h11 = -h1 * h1.t();
+	Mat h02 = -h0 * h2.t();
 
 	//PrintMat(&CvMat(h20));
 	//PrintMat(&CvMat(h10));
@@ -157,8 +157,8 @@ int main(int argc, char** argv) {
 	if (!cap.isOpened()) return -1;
 	cap.set(CV_CAP_PROP_FRAME_WIDTH, 320);
 	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
-	VideoWriter video_writer("out_frame.avi", CV_FOURCC('M','P','E','G'), 30, Size(320, 240), true);
-	if (!video_writer.isOpened()) return -1;
+	//VideoWriter video_writer("out_frame.avi", -1, 5, Size(320, 240), true);
+	//if (!video_writer.isOpened()) return -1;
 	
 	namedWindow("Input RGB Image", CV_WINDOW_AUTOSIZE);
 	//namedWindow("Gaussian Smoothed", CV_WINDOW_AUTOSIZE);
@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
 		Mat ev2(img.rows, img.cols, CV_64FC1);
 		for (int i = 0; i < img.rows; ++i)
 			for (int j = 0; j < img.cols; ++j) {
-				Mat hessian = cvCreateMat(2, 2, CV_64FC1), eigenvalues;
+				Mat hessian(2, 2, CV_64FC1), eigenvalues;
 				hessian.at<double>(0,0) = f20xy.at<double>(i,j);
 				hessian.at<double>(0,1) = f11xy.at<double>(i,j);
 				hessian.at<double>(1,0) = f11xy.at<double>(i,j);
@@ -205,12 +205,13 @@ int main(int argc, char** argv) {
 			}
 		
 		imshow("Input RGB Image", rgb);
-		video_writer << rgb;
+		//video_writer << rgb;
 		//imshow("Gaussian Smoothed", img);
 		//imshow("Magnitude", mag);
 		//imshow("EV1", ev1);
 		//imshow("EV2", ev2);
 		//waitKey();
+
 		if (waitKey(30) >= 0) break;
 	}
 	
