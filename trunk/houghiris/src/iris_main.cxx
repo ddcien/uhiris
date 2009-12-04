@@ -1,5 +1,6 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#include <opencv/cvaux.h>
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -10,14 +11,14 @@ int main(int argc, char ** argv){
 
 	// PARAMETERS
 	const string cascade_name = "haarcascade_lefteye_2splits.xml" ;
-	const int max_frame = 30;
-	const double edge_threshold = 130;
+        const int max_frame = 30;
+        const double edge_threshold = 150;
 	const double hough_circle_min_distance = 10;
 
 	int count_frame = 0;
 
 	if (argc < 2){
-		printf("usage: %s filename.wmv\n");
+                printf("usage: %s filename.wmv\n", argv[0]);
 		exit(1);
 	}
 
@@ -28,9 +29,11 @@ int main(int argc, char ** argv){
 	Mat cropped_frame;
 	Mat cropped_frame_gray;
         Mat thresholded_image;
+        Mat thresholded_image2;
 	Mat edges;
 	vector<Rect> detected_objects;
 	vector<Vec3f> circles; // hough circles
+        CvAdaptiveSkinDetector skin_detector;
 
         char * debug_window = "Cropped Frame";
         namedWindow(debug_window, CV_WINDOW_AUTOSIZE);
@@ -50,9 +53,12 @@ int main(int argc, char ** argv){
 	// write out detected eye cascade to the 2nd video
 	VideoWriter video_writer("out_frame.avi", CV_FOURCC('M','P','E','G'), 30, temp_frame.size(), true);
 
+        IplImage * cropped_frame_ipl;
+        IplImage * thresholded_image_ipl;
+
 	// while we can still capture
-	//while (count_frame<max_frame && capture.grab()){
-	while (capture.grab()){
+        while (count_frame<max_frame && capture.grab()){
+        //while (capture.grab()){
 		capture.retrieve(temp_frame);
 
 		// Perform detection
@@ -75,13 +81,20 @@ int main(int argc, char ** argv){
 			cvtColor(cropped_frame, cropped_frame_gray, CV_RGB2GRAY);
 
                         // threshold image to remove skin locations
-                        threshold(cropped_frame_gray, thresholded_image, 0, 0, THRESH_TOZERO | THRESH_OTSU);
-                        imshow(debug_window, thresholded_image);
-                        waitKey(0);
+                        //threshold(cropped_frame_gray, thresholded_image, 0, 0, THRESH_TOZERO_INV | THRESH_OTSU);
+
+                        cropped_frame_ipl = &IplImage(cropped_frame);
+                        //if (thresholded_image_ipl->imageData)
+                            cvReleaseImage(&thresholded_image_ipl);
+
+                        thresholded_image_ipl = cvCloneImage(cropped_frame_ipl);
+                        skin_detector.process(cropped_frame_ipl, thresholded_image_ipl);
+                        //imshow(debug_window, thresholded_image);
+                        //waitKey(0);
 
 			// canny edge detection
-			edges = Mat(cropped_frame_gray.size(),cropped_frame_gray.type());
-			Canny(cropped_frame_gray, edges, edge_threshold, edge_threshold * 3);
+                        edges = Mat(cropped_frame_gray.size(),cropped_frame_gray.type());
+                        Canny(cropped_frame_gray, edges, edge_threshold, edge_threshold * 3);
 
 			// hough circle
 			HoughCircles(edges, circles, CV_HOUGH_GRADIENT, 1, hough_circle_min_distance, 1, 10);
@@ -101,9 +114,12 @@ int main(int argc, char ** argv){
 		
 		char out_filename[200];
 		char out_iris_filename[200];
-		sprintf(out_filename, "left_eye_%d.png", count_frame);
-		sprintf(out_iris_filename, "left_iris_%d.png", count_frame);
-		cvSaveImage(out_filename, &IplImage(edges));
+                char out_edge_filename[200];
+                sprintf(out_filename, "input_%d.png", count_frame);
+                sprintf(out_edge_filename, "edge_%d.png", count_frame);
+                sprintf(out_iris_filename, "iris_%d.png", count_frame);
+                cvSaveImage(out_filename, &IplImage(thresholded_image));
+                cvSaveImage(out_edge_filename, &IplImage(edges));
 		cvSaveImage(out_iris_filename, &IplImage(cropped_frame));
 		video_writer << temp_out_frame;
 		
