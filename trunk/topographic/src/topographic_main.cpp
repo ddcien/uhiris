@@ -1,10 +1,12 @@
 #include <iostream>
 #include <cstdio>
+#include <fstream>
 #include "cv.h"
 #include "highgui.h"
 
 using std::cout;
 using std::endl;
+using std::ofstream;
 using namespace cv;
 
 enum Topographic {PEAK, PIT, RIDGESADDLE, RAVINESADDLE, RIDGE, RAVINE, FLAT, CONVEXHILL, CONCAVEHILL, CONCAVESADDLEHILL, CONVEXSADDLEHILL, SLOPEHILL};
@@ -36,83 +38,147 @@ void PrintMat(CvMat *A)
 }
 
 inline Mat ChebyshevZero(int N) {
-	Mat filter(2*N+1, 1, CV_64FC1);
+	Mat filter(2*N+1, 1, CV_32FC1);
 	double const_a = 3*N*N+3*N-1;
 	double const_b = (2*N-1)*(2*N+1)*(2*N+3);
 	for (int i = -N; i <= N; ++i)
-		filter.at<double>(i+N,0) = 3*(5*i*i-const_a)/const_b;
+		filter.at<float>(i+N,0) = 3*(5*i*i-const_a)/const_b;
 	return filter;
 }
 
 inline Mat ChebyshevFirst(int N) {
-	Mat filter(2*N+1, 1, CV_64FC1);
+	Mat filter(2*N+1, 1, CV_32FC1);
 	double const_a = 3*N*N+3*N-1;
 	double const_b = 3*pow(static_cast<double>(N),4)+6*pow(static_cast<double>(N),3)-3*N+1;
 	double const_c = (N-1)*N*(N+1)*(N+2)*(2*N-1)*(2*N+1)*(2*N+3);
 	for (int i = -N; i <= N; ++i)
-		filter.at<double>(i+N,0) = 5*(7*const_a*pow(static_cast<double>(i),3)-5*const_b*i)/const_c;
+		filter.at<float>(i+N,0) = 5*(7*const_a*pow(static_cast<double>(i),3)-5*const_b*i)/const_c;
 	return filter;
 }
 
 inline Mat ChebyshevSecond(int N) {
-	Mat filter(2*N+1, 1, CV_64FC1);
+	Mat filter(2*N+1, 1, CV_32FC1);
 	double const_a = N*(N+1);
 	double const_b = N*(N+1)*(2*N-1)*(2*N+1)*(2*N+3);
 	for (int i = -N; i <= N; ++i)
-		filter.at<double>(i+N,0) = 30*(3*i*i-const_a)/const_b;
+		filter.at<float>(i+N,0) = 30*(3*i*i-const_a)/const_b;
 	return filter;
+}
+
+void DumpMatDouble(const char* filename, const Mat& mat) {
+	ofstream fout;
+	fout.open(filename, ofstream::out);
+	if (fout.fail()) {
+		cout << "Could not open " << filename << " for writing." << endl;
+		return;
+	}
+	
+	for (int i = 0; i < mat.rows; ++i) {
+		for (int j = 0; j < mat.cols; ++j)
+			fout << mat.at<double>(i,j) << " ";
+		fout << endl;
+	}
+
+	fout.close();
 }
 
 int main(int argc, char** argv) {
 
-	int neighborhood_size = 21;
+	int neighborhood_size = 5;
 	assert(neighborhood_size % 2 == 1);
 	int N = (neighborhood_size - 1) / 2;
 
-	Mat h0 = ChebyshevZero(N);
-	Mat h1 = ChebyshevFirst(N);
-	Mat h2 = ChebyshevSecond(N);
-	Mat h20 = h2 * h0.t();
-	Mat h10 = h1 * h0.t();
-	Mat h01 = h0 * h1.t();
-	Mat h11 = h1 * h1.t();
-	Mat h02 = h0 * h2.t();
+	/** Filters from MATLAB
+		http://www.mathworks.com/matlabcentral/fileexchange/9123-2-d-savitzky-golay-smoothing-and-differentiation-filter
+	*/
+	float Size5Order1X1Y0[25] = {0.017143,0.0085714,-0,-0.0085714,-0.017143,
+								 -0.068571,-0.034286,0,0.034286,0.068571,
+								 -0.097143,-0.048571,0,0.048571,0.097143,
+								 -0.068571,-0.034286,0,0.034286,0.068571,
+								 0.017143,0.0085714,-0,-0.0085714,-0.017143};
+	float Size5Order2X2Y0[25] = {-0.02449,0.012245,0.02449,0.012245,-0.02449,
+								 0.097959,-0.04898,-0.097959,-0.04898,0.097959,
+								 0.13878,-0.069388,-0.13878,-0.069388,0.13878,
+								 0.097959,-0.04898,-0.097959,-0.04898,0.097959,
+								 -0.02449,0.012245,0.02449,0.012245,-0.02449};
+	float Size5Order2X1Y1[25] = {0.04,0.02,-0,-0.02,-0.04,
+								 0.02,0.01,-0,-0.01,-0.02,
+								 -0,-0,0,0,0,
+								 -0.02,-0.01,0,0.01,0.02,
+								 -0.04,-0.02,0,0.02,0.04};
+	float Size5Order2X0Y2[25] = {-0.02449,0.097959,0.13878,0.097959,-0.02449,
+								 0.012245,-0.04898,-0.069388,-0.04898,0.012245,
+								 0.02449,-0.097959,-0.13878,-0.097959,0.02449,
+								 0.012245,-0.04898,-0.069388,-0.04898,0.012245,
+								 -0.02449,0.097959,0.13878,0.097959,-0.02449};
+	float Size5Order1X0Y1[25] = {0.017143,-0.068571,-0.097143,-0.068571,0.017143,
+								 0.0085714,-0.034286,-0.048571,-0.034286,0.0085714,
+								 -0,0,0,0,-0,
+								 -0.0085714,0.034286,0.048571,0.034286,-0.0085714,
+								 -0.017143,0.068571,0.097143,0.068571,-0.017143};
+	Mat h10(5,5,CV_32FC1,Size5Order1X1Y0);
+	Mat h11(5,5,CV_32FC1,Size5Order2X1Y1);
+	Mat h20(5,5,CV_32FC1,Size5Order2X2Y0);
+	Mat h01(5,5,CV_32FC1,Size5Order1X0Y1);
+	Mat h02(5,5,CV_32FC1,Size5Order2X0Y2);
 
-	cvSave("h20.txt",&CvMat(h20));
-	PrintMat(&CvMat(h0));
-	PrintMat(&CvMat(h1));
-	PrintMat(&CvMat(h2));
-	PrintMat(&CvMat(h20));
-	PrintMat(&CvMat(h02));
+	/** Filters from 
+		http://research.microsoft.com/en-us/um/people/jckrumm/SavGol/SavGol.htm
+	*/
+	//float fSavGolSize5Order1X1Y0[25] = {-0.04000000f,-0.02000000f,0.00000000f,0.02000000f,0.04000000f,-0.04000000f,-0.02000000f,0.00000000f,0.02000000f,0.04000000f,-0.04000000f,-0.02000000f,0.00000000f,0.02000000f,0.04000000f,-0.04000000f,-0.02000000f,0.00000000f,0.02000000f,0.04000000f,-0.04000000f,-0.02000000f,0.00000000f,0.02000000f,0.04000000f};
+	//float fSavGolSize5Order1X0Y1[25] = {-0.04000000f,-0.04000000f,-0.04000000f,-0.04000000f,-0.04000000f,-0.02000000f,-0.02000000f,-0.02000000f,-0.02000000f,-0.02000000f,0.00000000f,0.00000000f,0.00000000f,0.00000000f,0.00000000f,0.02000000f,0.02000000f,0.02000000f,0.02000000f,0.02000000f,0.04000000f,0.04000000f,0.04000000f,0.04000000f,0.04000000f};
+	//float fSavGolSize5Order2X2Y0[25] = {0.02857143f,-0.01428571f,-0.02857143f,-0.01428571f,0.02857143f,0.02857143f,-0.01428571f,-0.02857143f,-0.01428571f,0.02857143f,0.02857143f,-0.01428571f,-0.02857143f,-0.01428571f,0.02857143f,0.02857143f,-0.01428571f,-0.02857143f,-0.01428571f,0.02857143f,0.02857143f,-0.01428571f,-0.02857143f,-0.01428571f,0.02857143f};
+	//float fSavGolSize5Order2X1Y1[25] = {0.04000000f,0.02000000f,0.00000000f,-0.02000000f,-0.04000000f,0.02000000f,0.01000000f,0.00000000f,-0.01000000f,-0.02000000f,0.00000000f,0.00000000f,0.00000000f,0.00000000f,0.00000000f,-0.02000000f,-0.01000000f,0.00000000f,0.01000000f,0.02000000f,-0.04000000f,-0.02000000f,0.00000000f,0.02000000f,0.04000000f};
+	//float fSavGolSize5Order2X0Y2[25] = {0.02857143f,0.02857143f,0.02857143f,0.02857143f,0.02857143f,-0.01428571f,-0.01428571f,-0.01428571f,-0.01428571f,-0.01428571f,-0.02857143f,-0.02857143f,-0.02857143f,-0.02857143f,-0.02857143f,-0.01428571f,-0.01428571f,-0.01428571f,-0.01428571f,-0.01428571f,0.02857143f,0.02857143f,0.02857143f,0.02857143f,0.0285};
+	//Mat h10(5,5,CV_32FC1,fSavGolSize5Order1X1Y0);
+	//Mat h11(5,5,CV_32FC1,fSavGolSize5Order2X1Y1);
+	//Mat h20(5,5,CV_32FC1,fSavGolSize5Order2X2Y0);
+	//Mat h01(5,5,CV_32FC1,fSavGolSize5Order1X0Y1);
+	//Mat h02(5,5,CV_32FC1,fSavGolSize5Order2X0Y2);
 
-	//VideoCapture cap(0);
-	//if (!cap.isOpened()) return -1;
-	//cap.set(CV_CAP_PROP_FRAME_WIDTH, 320);
-	//cap.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
+	/** Generate filters */
+	//Mat h0 = ChebyshevZero(N);
+	//Mat h1 = ChebyshevFirst(N);
+	//Mat h2 = ChebyshevSecond(N);
+	//Mat h20 = h2 * h0.t();
+	//Mat h10 = h1 * h0.t();
+	//Mat h01 = h0 * h1.t();
+	//Mat h11 = h1 * h1.t();
+	//Mat h02 = h0 * h2.t();
+
+	//PrintMat(&CvMat(h20));
+	//PrintMat(&CvMat(h10));
+	//PrintMat(&CvMat(h01));
+	//PrintMat(&CvMat(h11));
+	//PrintMat(&CvMat(h02));
+
+	VideoCapture cap(0);
+	if (!cap.isOpened()) return -1;
+	cap.set(CV_CAP_PROP_FRAME_WIDTH, 320);
+	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
 
 	namedWindow("Input RGB Image", CV_WINDOW_AUTOSIZE);
-	//namedWindow("Gray Image", CV_WINDOW_AUTOSIZE);
-	namedWindow("Gaussian Smoothed", CV_WINDOW_AUTOSIZE);
-	namedWindow("Magnitude", CV_WINDOW_AUTOSIZE);
-	namedWindow("EV1", CV_WINDOW_AUTOSIZE);
-	namedWindow("EV2", CV_WINDOW_AUTOSIZE);
+	//namedWindow("Gaussian Smoothed", CV_WINDOW_AUTOSIZE);
+	//namedWindow("Magnitude", CV_WINDOW_AUTOSIZE);
+	//namedWindow("EV1", CV_WINDOW_AUTOSIZE);
+	//namedWindow("EV2", CV_WINDOW_AUTOSIZE);
 	
-//	for (;;) {
+	for (;;) {
 
-		Mat rgb, gray, img, tmp;
-		rgb = imread(argv[1]);
-//		cap >> rgb;
+		Mat rgb, gray, img, tmp, gray_64fc1;
+		//rgb = imread(argv[1]);
+		cap >> rgb;
 		cvtColor(rgb, gray, CV_RGB2GRAY);
-		GaussianBlur(gray, tmp, Size(25, 25), 20);
-		GaussianBlur(tmp, img, Size(25, 25), 20);
-
-		Mat img_64fc1, f20xy, f11xy, f02xy, f10x, f01y;
-		img.convertTo(img_64fc1, CV_64FC1);
-		filter2D(img_64fc1, f20xy, -1, h20);
-		filter2D(img_64fc1, f10x, -1, h10);
-		filter2D(img_64fc1, f01y, -1, h01);
-		filter2D(img_64fc1, f11xy, -1, h11);
-		filter2D(img_64fc1, f02xy, -1, h02);
+		gray.convertTo(gray_64fc1, CV_64FC1);
+		GaussianBlur(gray_64fc1, tmp, Size(15, 15), 2.5);
+		GaussianBlur(tmp, img, Size(15, 15), 2.5);
+		
+		Mat f20xy, f11xy, f02xy, f10x, f01y;
+		filter2D(img, f20xy, -1, h20);
+		filter2D(img, f10x, -1, h10);
+		filter2D(img, f01y, -1, h01);
+		filter2D(img, f11xy, -1, h11);
+		filter2D(img, f02xy, -1, h02);
 		
 		Mat label_map(img.rows, img.cols, CV_8UC1, Scalar(0));
 		Mat mag(img.rows, img.cols, CV_64FC1);
@@ -129,26 +195,20 @@ int main(int argc, char** argv) {
 				mag.at<double>(i,j) = sqrt(pow(f10x.at<double>(i,j), 2)+pow(f01y.at<double>(i,j), 2));
 				ev1.at<double>(i,j) = eigenvalues.at<double>(0,0);
 				ev2.at<double>(i,j) = eigenvalues.at<double>(1,0);
-				if (mag.at<double>(i,j) < 0.1 && eigenvalues.at<double>(0,0) > 0.1 && eigenvalues.at<double>(1,0) > 0.1) {
+				if (mag.at<double>(i,j) < 1.4 && eigenvalues.at<double>(0,0) > 1 && eigenvalues.at<double>(1,0) > 1) {
 					circle(rgb, Point(j,i), 5, CV_RGB(0,255,0));
 					//cout << Point(i,j).x << " " << Point(i,j).y << endl;
 				}
 			}
 		
 		imshow("Input RGB Image", rgb);
-		//imshow("Gray Image", gray);
-		imshow("Gaussian Smoothed", img);
-		imshow("Magnitude", mag);
-		imshow("EV1", ev1);
-		imshow("EV2", ev2);
-		waitKey();
-	//	if (waitKey(30) >= 0) break;
-	//}
-
-	
-	//PrintMat(&CvMat(h20));
-	//PrintMat(&CvMat(h11));
-	//PrintMat(&CvMat(h02));
+		//imshow("Gaussian Smoothed", img);
+		//imshow("Magnitude", mag);
+		//imshow("EV1", ev1);
+		//imshow("EV2", ev2);
+		//waitKey();
+		if (waitKey(30) >= 0) break;
+	}
 	
 	return 0;
 }
