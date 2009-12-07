@@ -55,6 +55,15 @@ void DumpMatDouble(const char* filename, const Mat& mat) {
 	fout.close();
 }
 
+/**
+	If no iris is located via Mutual Information search, try reinitialize.
+	Keep initializing until the iris is located.
+*/
+bool InitializeFrame() {
+
+	return true;
+}
+
 int main(int argc, char** argv) {
 
 	int neighborhood_size = 5;
@@ -62,7 +71,7 @@ int main(int argc, char** argv) {
 	int N = (neighborhood_size - 1) / 2;
 
 	/** Generate filters */
-	Differential filters(Differential::CHEBYSHEV);
+	Differential filters(Differential::SAVGOLMATHWORK);
 	filters.ComputeFilterSet();
 	Mat h20 = filters.get_h20();
 	Mat h10 = filters.get_h10();
@@ -75,7 +84,6 @@ int main(int argc, char** argv) {
 	//PrintMat(&CvMat(h01));
 	//PrintMat(&CvMat(h11));
 	//PrintMat(&CvMat(h02));
-
 		
 	VideoCapture cap(0);
 	if (!cap.isOpened()) return -1;
@@ -84,7 +92,7 @@ int main(int argc, char** argv) {
 	//VideoWriter video_writer("out_frame.avi", -1, 5, Size(320, 240), true);
 	//if (!video_writer.isOpened()) return -1;
 	
-	namedWindow("Input RGB Image", CV_WINDOW_AUTOSIZE);
+	namedWindow("Input", CV_WINDOW_AUTOSIZE);
 	//namedWindow("Gaussian Smoothed", CV_WINDOW_AUTOSIZE);
 	//namedWindow("Magnitude", CV_WINDOW_AUTOSIZE);
 	//namedWindow("EV1", CV_WINDOW_AUTOSIZE);
@@ -97,6 +105,12 @@ int main(int argc, char** argv) {
 		cap >> rgb;
 		cvtColor(rgb, gray, CV_RGB2GRAY);
 		gray.convertTo(gray_64fc1, CV_64FC1);
+		/**
+			By applying Gaussian Blur twice, many false detections (most likely due to noise) can be eliminated.
+			However, at the same time we comprised the robustness against pose changes: if the eye is close to the
+			facial boundary, it will be smoothed out (blend into the background).
+			Applying smoothing only once has the opposite effect. Hence there is a trade-off here.
+		*/
 		GaussianBlur(gray_64fc1, tmp, Size(15, 15), 2.5);
 		GaussianBlur(tmp, img, Size(15, 15), 2.5);
 		
@@ -128,7 +142,7 @@ int main(int argc, char** argv) {
 				}
 			}
 		
-		imshow("Input RGB Image", rgb);
+		imshow("Input", rgb);
 		//video_writer << rgb;
 		//imshow("Gaussian Smoothed", img);
 		//imshow("Magnitude", mag);
