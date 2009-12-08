@@ -54,6 +54,9 @@ for i = 1:rows
             (mag(i,j) < 1.4 && ev(1) > 1 && abs(ev(2)) < 0.01)
             % ravine
             plot(j,i,'co');
+        elseif (mag(i,j) < 1.4 && abs(ev(1)) < 0.1 && abs(ev(2)) < 0.1)
+            % flat
+            plot(j,i,'mx');
         end
         foo1(i,j) = [f10x(i,j) f01y(i,j)] * v(:,1);
         foo2(i,j) = [f10x(i,j) f01y(i,j)] * v(:,2);
