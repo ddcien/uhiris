@@ -14,7 +14,7 @@ mov = aviread('sample2.avi');
 num_of_frames = length(mov);
 % M(num_of_frames) = struct('cdata',[],'colormap',[]);
 
-for k = 10:10
+for k = 15:15
     rgb = mov(k).cdata;
     labels = ProcessFrame(rgb);
 end
