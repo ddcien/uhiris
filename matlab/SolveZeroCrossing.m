@@ -16,9 +16,10 @@ C = [C1 C2 C3];
 
 zc = [];
 rho = roots(C);
-if (isreal(rho))
+num_of_roots = size(rho, 1);
+if (isreal(rho) && ~isempty(rho))
     realroots = [rho * sin(theta) rho * cos(theta)];
-    for i = 1:2
+    for i = 1:num_of_roots
         if abs(realroots(i,:)) <= 0.5
             zc = [zc; realroots(i,1) realroots(i,2)];
         end
