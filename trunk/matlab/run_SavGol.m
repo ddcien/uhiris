@@ -1,16 +1,17 @@
 close all
 clear
-global A A00 A10 A01 A20 A11 A02 A30 A21 A12 A03
-% a00 a10 a01 a20 a11 a02 a30 a21 a12 a03
-A00 = 1; A10 = 2; A01 = 3; A20 = 4; A11 = 5; A02 = 6; A30 = 7; A21 = 8; A12 = 9; A03 = 10;
-[NamesCoefs, NamesTerms, XPow, YPow, SG] = SavGol(3,5)
+global A A10 A20 A01 A11 A02 myeps
+% a00 + a10 * x + a20 * x^2 + a01 * y + a11 * x * y + a02 * y^2
+A00 = 1; A10 = 2; A20 = 3; A01 = 4; A11 = 5; A02 = 6;
+
+myeps = 10^-5;
+
+[NamesCoefs, NamesTerms, XPow, YPow, SG] = SavGol(2,5);
 
 mov = aviread('sample2.avi');
 num_of_frames = length(mov);
 frame = mov(10).cdata;
 % frame = imread('leye.jpg');
-
-myeps = 0.0000001;
 
 tic
 if size(frame, 3) == 3
@@ -24,8 +25,8 @@ g = fspecial('gaussian', 15, 2.5);
 img = imfilter(img, g, 'symmetric');
 % convolve the image with the computed set of filters to obtain the
 % polynomial coefficients
-A = zeros(rows, cols, 10);
 num_of_coef = size(SG, 3);
+A = zeros(rows, cols, num_of_coef);
 for i = 1:num_of_coef
     A(:,:,i) = imfilter(img, SG(:,:,i), 'symmetric');
 end
@@ -66,7 +67,7 @@ for i = 1:rows
         % of the first directional derivative within the pixel's area, if
         % the eigenvalues are equal and nonzero, search in the Newton
         % direction
-        if (abs(ev(1) - ev(2)) < eps && ev(1) ~= 0)
+        if (abs(ev(1) - ev(2)) < myeps && ev(1) ~= 0)
             newton = [-f10x(i,j)/f20x(i,j); -f01y(i,j)/f02y(i,j)];
             directional_vector = newton;
         else
@@ -76,7 +77,7 @@ for i = 1:rows
         zc = [];
         num_of_dv = size(directional_vector, 2);
         for k = 1:num_of_dv
-            zc = [zc; SolveZeroCrossing(directional_vector(:,k),A(i,j,A10),A(i,j,A01),A(i,j,A20),A(i,j,A11),A(i,j,A02),A(i,j,A30),A(i,j,A21),A(i,j,A12),A(i,j,A03))];
+            zc = [zc; SolveZeroCrossing(directional_vector(:,k),i,j)];
         end
         if ~(isempty(zc))
             label = TopographicClassification(i, j, zc);
