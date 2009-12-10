@@ -40,23 +40,25 @@ for i = 1:rows
             plot(j,i,'r+');
         elseif mag(i,j) < 1.4 && ev(1) < -1 && ev(2) < -1
             % peak
-%             plot(j,i,'go');
+            plot(j,i,'go');
         elseif mag(i,j) < 1.4 && ev(1) * ev(2) < -1
             % saddle
-%             plot(j,i,'bx');
+            plot(j,i,'bx');
         elseif (mag(i,j) > 1.4 && ev(1) < -1 && abs([f10x(i,j) f01y(i,j)] * v(:,1)) < 0.01) || ...
             (mag(i,j) > 1.4 && ev(2) < -1 && abs([f10x(i,j) f01y(i,j)] * v(:,2)) < 0.01) || ...
-            (mag(i,j) < 1.4 && ev(1) < -1 && abs(ev(2)) < 0.01)
+            (mag(i,j) < 1.4 && ev(1) < -1 && abs(ev(2)) < 0.01) || ...
+            (mag(i,j) < 1.4 && abs(ev(1)) < 0.01 && ev(2) < -1)
             % ridge
-%             plot(j,i,'y+');
+            plot(j,i,'y*');
         elseif (mag(i,j) > 1.4 && ev(1) > 1 && abs([f10x(i,j) f01y(i,j)] * v(:,1)) < 0.01) || ...
             (mag(i,j) > 1.4 && ev(2) > 1 && abs([f10x(i,j) f01y(i,j)] * v(:,2)) < 0.01) || ...
-            (mag(i,j) < 1.4 && ev(1) > 1 && abs(ev(2)) < 0.01)
+            (mag(i,j) < 1.4 && ev(1) > 1 && abs(ev(2)) < 0.01) || ...
+            (mag(i,j) < 1.4 && abs(ev(1)) < 0.01 && ev(2) > 1)
             % ravine
-%             plot(j,i,'co');
+            plot(j,i,'co');
         elseif (mag(i,j) < 1.4 && abs(ev(1)) < 0.1 && abs(ev(2)) < 0.1)
             % flat
-%             plot(j,i,'mx');
+            plot(j,i,'mx');
         end
         foo1(i,j) = [f10x(i,j) f01y(i,j)] * v(:,1);
         foo2(i,j) = [f10x(i,j) f01y(i,j)] * v(:,2);

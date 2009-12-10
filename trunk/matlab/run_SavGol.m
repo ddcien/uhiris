@@ -4,7 +4,7 @@ global A A10 A20 A01 A11 A02 myeps
 % a00 + a10 * x + a20 * x^2 + a01 * y + a11 * x * y + a02 * y^2
 A00 = 1; A10 = 2; A20 = 3; A01 = 4; A11 = 5; A02 = 6;
 
-myeps = 10^-5;
+myeps = 10^-6;
 
 [NamesCoefs, NamesTerms, XPow, YPow, SG] = SavGol(2,5);
 
@@ -21,7 +21,7 @@ else
 end
 [rows cols] = size(img);
 
-g = fspecial('gaussian', 15, 2.5);
+g = fspecial('gaussian', 15, 3);
 img = imfilter(img, g, 'symmetric');
 % convolve the image with the computed set of filters to obtain the
 % polynomial coefficients
@@ -33,12 +33,12 @@ end
 A(A<myeps) = 0;
 
 %%%%%
-coef = squeeze(A(88,132,:));
+coef = squeeze(A(140,250,:));
 syms x y
 symb = [1 x x^2 y x*y y^2];
 fun = coef' * symb';
 ezsurf(fun,[-2 2 -2 2]); hold on;
-eyeimg = img(88+[-2:2], 132+[-2:2]);
+eyeimg = img(140+[-2:2], 250+[-2:2]);
 surf(-2:2,-2:2,eyeimg); hold off;
 figure;
 %%%%%
@@ -86,7 +86,10 @@ for i = 1:rows
             if mag == 0 && ev(1) > 0 && ev(2) > 0
                 % pit
                 plot(j,i,'r+');
-            elseif mag < 10^-5 && abs(ev(1)) < 10^-5 && abs(ev(2)) < 10^-5
+            elseif mag == 0 && ev(1) < 0 && ev(2) < 0
+                % peak
+                plot(y,x,'y*');
+            elseif mag == 0 && ev(1) == 0 && ev(2) == 0
                 % flat
                 plot(j,i,'bo');
             end

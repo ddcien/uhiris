@@ -16,18 +16,16 @@ a02 = A(x,y,A02);
 % the direction angle is the clockwise angle from the column (y) axis
 theta = pi/2 - atan2(vect(2), vect(1));
 
+% C1 * rho + C2 = 0
 C1 = 2*a20*sin(theta)^2 + a11*sin(theta)*cos(theta) + 2*a02*cos(theta)^2;
 C2 = a10*sin(theta) + a01*cos(theta);
-C = [C1 C2 C3];
 
 zc = [];
-rho = roots(C);
-num_of_roots = size(rho, 1);
-if (isreal(rho) && ~isempty(rho))
-    realroots = [rho * sin(theta) rho * cos(theta)];
-    for i = 1:num_of_roots
-        if abs(realroots(i,:)) <= 0.5
-            zc = [zc; realroots(i,1) realroots(i,2)];
-        end
+if C1 ~= 0
+    rho = -C2 / C1;
+    x = rho * sin(theta);
+    y = rho * cos(theta);
+    if abs(x) <= 0.5 && abs(y) <= 0.5
+        zc = [x y];
     end
 end
