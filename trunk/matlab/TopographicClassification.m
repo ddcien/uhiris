@@ -9,7 +9,8 @@ num_of_zc = size(zc, 1);
         mag(i) = norm([f10x(i) f01y(i)]);
     end
     zc = zc(mag==min(mag),:);
-    mag = mag(mag==min(mag));
+    min_idx = find(mag==min(mag));
+    mag = mag(min_idx(1));
 % end
 
 f20x = 2*A(x,y,A20)+6*A(x,y,A30)*zc(1)+2*A(x,y,A21)*zc(2);
@@ -24,10 +25,14 @@ hessian(2,2) = f02y;
 [v d] = eig(hessian);
 ev = diag(d);
 
-if mag < 0.01 && ev(1) > 0 && ev(2) > 0
+if mag == 0 && ev(1) > 0 && ev(2) > 0
     % pit
     plot(y,x,'r+');
     label = 1;
+elseif mag < 10^-5 && abs(ev(1)) < 10^-5 && abs(ev(2)) < 10^-5
+    % flat
+    plot(y,x,'bo');
+    label = 2;
 else
     label = 0;
 end
