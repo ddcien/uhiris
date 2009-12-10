@@ -1,4 +1,4 @@
-function zc = SolveZeroCrossing(vect, a10, a01, a20, a11, a02, a30, a21, a12, a03)
+function zc = SolveZeroCrossing(vect,x,y)
 % INPUT
 %   vect    : directional vector
 %   a**     : polynomial coefficients
@@ -6,12 +6,18 @@ function zc = SolveZeroCrossing(vect, a10, a01, a20, a11, a02, a30, a21, a12, a0
 %   x       : x of the zero-crossing, if within the pixel area -0.5:0.5
 %   y       : y of the zero-crossing, if within the pixel area -0.5:0.5
 
+global A A10 A20 A01 A11 A02
+a10 = A(x,y,A10);
+a20 = A(x,y,A20);
+a01 = A(x,y,A01);
+a11 = A(x,y,A11);
+a02 = A(x,y,A02);
+
 % the direction angle is the clockwise angle from the column (y) axis
 theta = pi/2 - atan2(vect(2), vect(1));
 
-C1 = 3*a30*sin(theta)^3 + 3*a21*sin(theta)^2*cos(theta) + 3*a12*sin(theta)*cos(theta)^2+3*a03*cos(theta)^3;
-C2 = 2*a20*sin(theta)^2 + 2*a11*sin(theta)*cos(theta) + 2*a02*cos(theta)^2;
-C3 = a10*sin(theta) + a01*cos(theta);
+C1 = 2*a20*sin(theta)^2 + a11*sin(theta)*cos(theta) + 2*a02*cos(theta)^2;
+C2 = a10*sin(theta) + a01*cos(theta);
 C = [C1 C2 C3];
 
 zc = [];
