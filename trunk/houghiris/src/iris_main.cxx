@@ -96,9 +96,9 @@ int main(int argc, char ** argv){
 			erode(thresholded_image, eroded_mask, Mat());
 
 			imshow(debug_window, thresholded_image);
-//			waitKey(0);
+			waitKey(0);
 			imshow(debug_window, eroded_mask);
-//			waitKey(0);
+			waitKey(0);
             
 			// NOTE: the problem with thresholding is that it creates very strong edge. When we create edges, we need a way to remove
             //       those that are created by this step
@@ -110,13 +110,13 @@ int main(int argc, char ** argv){
             Canny(cropped_frame_gray, edges, edge_threshold, edge_threshold * 3);
 
 			imshow(debug_window, edges);
-//			waitKey(0);
+			waitKey(0);
 
 			// apply eroded mask on edges to remove edges in sections we do not care about (skin)
 			masked_edges = edges.mul(1.0/255 * eroded_mask);
 
 			imshow(debug_window, masked_edges);
-//			waitKey(0);
+			waitKey(0);
 
             // hough circle
             HoughCircles(edges, circles, CV_HOUGH_GRADIENT, 1, hough_circle_min_distance, 1, 10);
