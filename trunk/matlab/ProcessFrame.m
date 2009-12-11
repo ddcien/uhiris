@@ -6,7 +6,7 @@ RIDGESADDLE = 3; RAVINESADDLE = 4;
 RIDGE = 5; RAVINE = 6; FLAT = 7; 
 CONVEXHILL = 8; CONCAVEHILL = 9;
 CONCAVESADDLEHILL = 10; CONVEXSADDLEHILL = 11; SLOPEHILL = 12;
-Tmag = 1.4; Tev = 1; Tge = 0.01;
+Tmag = 1.4; Tev = 1; Tge = 0;
 
 if size(frame, 3) == 3
     img = double(rgb2gray(frame));
@@ -14,7 +14,7 @@ else
     img = double(frame);
 end
 
-g = fspecial('gaussian', 17, 3);
+g = fspecial('gaussian', 15, 2.5);
 img = imfilter(img, g, 'symmetric');
 img = imfilter(img, g, 'symmetric');
 f20x = imfilter(img,h20,'symmetric');
@@ -47,7 +47,7 @@ for i = 1:rows
             plot(j,i,'r+');
             eye = [eye; i j];
             labels(i,j) = PIT;
-        elseif mag(i,j) < Tmag && ev(1) * ev(2) < -Tev
+        elseif mag(i,j) < Tmag && ev(1) * ev(2) < 0
             % saddle
 %             plot(j,i,'bx');
             if sum(ev) < 0
@@ -85,7 +85,7 @@ for i = 1:rows
                 labels(i,j) = CONVEXHILL;
             elseif (ev(1) < -Tev && ev(2) <= -Tev) || (ev(1) <= -Tev && ev(2) < -Tev)
                 labels(i,j) = CONCAVEHILL;
-            elseif ev(1) * ev(2) < -Tev
+            elseif ev(1) * ev(2) < 0
                 if sum(ev) < 0
                     labels(i,j) = CONVEXSADDLEHILL;
                 else
