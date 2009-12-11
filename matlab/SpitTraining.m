@@ -1,1 +1,1 @@
-function SpitTraining(labels, eye)
+function SpitTraining(labels, eye, leyecue, reyecue)
