@@ -38,7 +38,7 @@ void PrintMat(CvMat *A)
 	printf("\n");
 }
 
-void DumpMatDouble(const char* filename, const Mat& mat) {
+void DumpMatFloat(const char* filename, const Mat& mat) {
 	ofstream fout;
 	fout.open(filename, ofstream::out);
 	if (fout.fail()) {
@@ -48,7 +48,7 @@ void DumpMatDouble(const char* filename, const Mat& mat) {
 	
 	for (int i = 0; i < mat.rows; ++i) {
 		for (int j = 0; j < mat.cols; ++j)
-			fout << mat.at<double>(i,j) << " ";
+			fout << mat.at<float>(i,j) << " ";
 		fout << endl;
 	}
 
@@ -87,9 +87,9 @@ int main(int argc, char** argv) {
 		
 	VideoCapture cap(0);
 	if (!cap.isOpened()) return -1;
-	cap.set(CV_CAP_PROP_FRAME_WIDTH, 320);
-	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
-	//VideoWriter video_writer("out_frame.avi", -1, 5, Size(320, 240), true);
+	cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+	//VideoWriter video_writer("out_frame_big4.avi", -1, 5, Size(640, 480), true);
 	//if (!video_writer.isOpened()) return -1;
 	
 	namedWindow("Input", CV_WINDOW_AUTOSIZE);
@@ -103,6 +103,8 @@ int main(int argc, char** argv) {
 		Mat rgb, gray, img, tmp, gray_64fc1;
 		//rgb = imread(argv[1]);
 		cap >> rgb;
+		//video_writer << rgb;
+#if 1
 		cvtColor(rgb, gray, CV_RGB2GRAY);
 		gray.convertTo(gray_64fc1, CV_64FC1);
 		/**
@@ -127,12 +129,12 @@ int main(int argc, char** argv) {
 		Mat ev2(img.rows, img.cols, CV_64FC1);
 		for (int i = 0; i < img.rows; ++i)
 			for (int j = 0; j < img.cols; ++j) {
-				Mat hessian(2, 2, CV_64FC1), eigenvalues;
+				Mat hessian(2, 2, CV_64FC1), eigenvalues, eigenvectors;
 				hessian.at<double>(0,0) = f20xy.at<double>(i,j);
 				hessian.at<double>(0,1) = f11xy.at<double>(i,j);
 				hessian.at<double>(1,0) = f11xy.at<double>(i,j);
 				hessian.at<double>(1,1) = f02xy.at<double>(i,j);
-				eigen(hessian, eigenvalues);
+				eigen(hessian, eigenvalues, eigenvectors);
 				mag.at<double>(i,j) = sqrt(pow(f10x.at<double>(i,j), 2)+pow(f01y.at<double>(i,j), 2));
 				ev1.at<double>(i,j) = eigenvalues.at<double>(0,0);
 				ev2.at<double>(i,j) = eigenvalues.at<double>(1,0);
@@ -141,7 +143,7 @@ int main(int argc, char** argv) {
 					//cout << Point(i,j).x << " " << Point(i,j).y << endl;
 				}
 			}
-		
+#endif
 		imshow("Input", rgb);
 		//video_writer << rgb;
 		//imshow("Gaussian Smoothed", img);
