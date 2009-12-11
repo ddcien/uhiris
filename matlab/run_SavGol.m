@@ -7,6 +7,19 @@ A00 = 1; A10 = 2; A20 = 3; A01 = 4; A11 = 5; A02 = 6;
 myeps = 10^-6;
 
 [NamesCoefs, NamesTerms, XPow, YPow, SG] = SavGol(2,5);
+% SG = zeros(5,5,6);
+% SG(:,:,2) = sgsdf_2d2(-2:2,-2:2,2,2,1,0,1);
+% SG(:,:,3) = sgsdf_2d2(-2:2,-2:2,2,2,2,0,1);
+% SG(:,:,4) = sgsdf_2d2(-2:2,-2:2,2,2,0,1,1);
+% SG(:,:,5) = sgsdf_2d2(-2:2,-2:2,2,2,1,1,1);
+% SG(:,:,6) = sgsdf_2d2(-2:2,-2:2,2,2,0,2,1);
+% 
+% SG(:,:,A10) = dlmread('h10.txt')';
+% SG(:,:,A20) = dlmread('h20.txt')';
+% SG(:,:,A01) = dlmread('h01.txt')';
+% SG(:,:,A11) = dlmread('h11.txt')';
+% SG(:,:,A02) = dlmread('h02.txt')';
+
 
 mov = aviread('sample2.avi');
 num_of_frames = length(mov);
@@ -21,25 +34,29 @@ else
 end
 [rows cols] = size(img);
 
-g = fspecial('gaussian', 15, 3);
+g = fspecial('gaussian', 17, 3);
+img = imfilter(img, g, 'symmetric');
 img = imfilter(img, g, 'symmetric');
 % convolve the image with the computed set of filters to obtain the
 % polynomial coefficients
 num_of_coef = size(SG, 3);
 A = zeros(rows, cols, num_of_coef);
-for i = 1:num_of_coef
-    A(:,:,i) = imfilter(img, SG(:,:,i), 'symmetric');
+for i = 2:num_of_coef
+    % REMOVE the transpose if not computed from SavGol
+    A(:,:,i) = imfilter(img, SG(:,:,i)', 'symmetric');
 end
-A(A<myeps) = 0;
+% A(:,:,A20) = A(:,:,A20)/2;
+% A(:,:,A02) = A(:,:,A02)/2;
+% A(A<myeps) = 0;
 
 %%%%%
-coef = squeeze(A(140,250,:));
+coef = squeeze(A(88,133,:));
 syms x y
 symb = [1 x x^2 y x*y y^2];
 fun = coef' * symb';
 ezsurf(fun,[-2 2 -2 2]); hold on;
-eyeimg = img(140+[-2:2], 250+[-2:2]);
-surf(-2:2,-2:2,eyeimg); hold off;
+eyeimg = img(88+[-2:2], 133+[-2:2]);
+figure; surf(-2:2,-2:2,eyeimg); hold off;
 figure;
 %%%%%
 
@@ -47,13 +64,16 @@ figure;
 f10x = A(:,:,A10);
 f01y = A(:,:,A01);
 f11xy = A(:,:,A11);
-f20x = A(:,:,A20);
-f02y = A(:,:,A02);
+f20x = A(:,:,A20)*2;
+f02y = A(:,:,A02)*2;
 
 imshow(frame,[]); hold on;
 
 % preallocation some stuff
 hessian = zeros(2);
+mag = sqrt(f10x.^2+f01y.^2);
+ev1 = zeros(rows, cols);
+ev2 = zeros(rows, cols);
 for i = 1:rows
     for j = 1:cols
         hessian(1,1) = f20x(i,j);
@@ -80,20 +100,24 @@ for i = 1:rows
             zc = [zc; SolveZeroCrossing(directional_vector(:,k),i,j)];
         end
         if ~(isempty(zc))
-            label = TopographicClassification(i, j, zc);
-        else
-            mag = norm([f10x(i,j) f01y(i,j)]);
-            if mag == 0 && ev(1) > 0 && ev(2) > 0
-                % pit
-                plot(j,i,'r+');
-            elseif mag == 0 && ev(1) < 0 && ev(2) < 0
-                % peak
-                plot(y,x,'y*');
-            elseif mag == 0 && ev(1) == 0 && ev(2) == 0
-                % flat
-                plot(j,i,'bo');
-            end
+            [m eval evec] = TopographicClassification(i, j, zc);
+            mag(i,j) = m;
+            ev = eval;
+            v = evec;
         end
+        
+        ev1(i,j) = ev(1); ev2(i,j) = ev(2);
+        if mag(i,j) == 0 && ev(1) > 0 && ev(2) > 0
+            % pit
+            plot(j,i,'r+');
+        elseif mag(i,j) == 0 && ev(1) < 0 && ev(2) < 0
+            % peak
+            plot(j,i,'yx');
+        elseif mag(i,j) == 0 && ev(1) == 0 && ev(2) == 0
+            % flat
+            plot(j,i,'bo');
+        end
+        
     end
 end
 hold off;

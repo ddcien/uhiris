@@ -1,4 +1,4 @@
-function label = TopographicClassification(x, y, zc)
+function [mag eigenvalues eigenvectors] = TopographicClassification(x, y, zc)
 global A A10 A01 A20 A11 A02 myeps
 num_of_zc = size(zc, 1);
 % if num_of_zc > 1
@@ -23,23 +23,9 @@ hessian(2,1) = f11xy;
 hessian(2,2) = f02y;
 
 [v d] = eig(hessian);
-ev = diag(d);
+eigenvalues = diag(d);
+eigenvectors = v;
 
-if mag == 0 && ev(1) > 0 && ev(2) > 0
-    % pit
-    plot(y,x,'r+');
-    label = 1;
-elseif mag == 0 && ev(1) < 0 && ev(2) < 0
-    % peak
-    plot(y,x,'y*');
-    label = 2;
-elseif mag == 0 && ev(1) == 0 && ev(2) == 0
-    % flat
-    plot(y,x,'bo');
-    label = 3;
-else
-    label = 0;
-end
 
 
 
