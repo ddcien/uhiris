@@ -12,7 +12,7 @@ int main(int argc, char ** argv){
     // PARAMETERS
     const string cascade_name = "haarcascade_lefteye_2splits.xml" ;
     const int max_frame = 30;
-    const double edge_threshold = 150;
+    const double edge_threshold = 100;
     const double hough_circle_min_distance = 10;
 
     int count_frame = 0;
@@ -57,8 +57,8 @@ int main(int argc, char ** argv){
     IplImage * thresholded_image_ipl;
 
     // while we can still capture
-    while (count_frame<max_frame && capture.grab()){
-        //while (capture.grab()){
+    //while (count_frame<max_frame && capture.grab()){
+    while (capture.grab()){
         capture.retrieve(temp_frame);
 
         // Perform detection
@@ -119,7 +119,7 @@ int main(int argc, char ** argv){
 // 			waitKey(0);
 
             // hough circle with mask radius constraint
-            HoughCircles(thresholded_image, circles, CV_HOUGH_GRADIENT, 1, hough_circle_min_distance, edge_threshold*2, 10, 1, edges.rows/2);
+            HoughCircles(thresholded_image, circles, CV_HOUGH_GRADIENT, 1, hough_circle_min_distance, edge_threshold*2, 10, 1, edges.rows*0.3);
 
             for(size_t i=0; i <circles.size();i++)
             {

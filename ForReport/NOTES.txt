@@ -1,0 +1,1 @@
+Iris segmentation using only Hough Transform is due for some big problems due to low resolution, motion blur, iris deformation (near edges), periocular edges (if an edge-based method is used).
