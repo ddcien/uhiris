@@ -96,9 +96,9 @@ int main(int argc, char ** argv){
 			erode(thresholded_image, eroded_mask, Mat());
 
 			imshow(debug_window, thresholded_image);
-			waitKey(0);
+			//waitKey(0);
 			imshow(debug_window, eroded_mask);
-			waitKey(0);
+			//waitKey(0);
             
 			// NOTE: the problem with thresholding is that it creates very strong edge. When we create edges, we need a way to remove
             //       those that are created by this step
@@ -106,20 +106,20 @@ int main(int argc, char ** argv){
 			//           then we apply this mask on the detected edges
 
             // canny edge detection
-            edges = Mat(cropped_frame_gray.size(),cropped_frame_gray.type());
-            Canny(cropped_frame_gray, edges, edge_threshold, edge_threshold * 3);
+            //edges = Mat(cropped_frame_gray.size(),cropped_frame_gray.type());
+            Canny(thresholded_image, edges, edge_threshold, edge_threshold * 3);
 
 			imshow(debug_window, edges);
-			waitKey(0);
+			//waitKey(0);
 
 			// apply eroded mask on edges to remove edges in sections we do not care about (skin)
-			masked_edges = edges.mul(1.0/255 * eroded_mask);
+// 			masked_edges = edges.mul(1.0/255 * eroded_mask);
+// 
+// 			imshow(debug_window, masked_edges);
+// 			waitKey(0);
 
-			imshow(debug_window, masked_edges);
-			waitKey(0);
-
-            // hough circle
-            HoughCircles(edges, circles, CV_HOUGH_GRADIENT, 1, hough_circle_min_distance, 1, 10);
+            // hough circle with mask radius constraint
+            HoughCircles(thresholded_image, circles, CV_HOUGH_GRADIENT, 1, hough_circle_min_distance, edge_threshold*2, 10, 1, edges.rows/2);
 
             for(size_t i=0; i <circles.size();i++)
             {
@@ -130,6 +130,9 @@ int main(int argc, char ** argv){
                 //draw the circle out line
                 circle(cropped_frame, center, radius, CV_RGB(0,0,255),1,8,0);
             }
+
+			imshow(debug_window, cropped_frame);
+			//waitKey(0);
         }
 
         printf(".");
@@ -141,7 +144,7 @@ int main(int argc, char ** argv){
         sprintf(out_edge_filename, "edge_%d.png", count_frame);
         sprintf(out_iris_filename, "iris_%d.png", count_frame);
         cvSaveImage(out_filename, &IplImage(thresholded_image));
-        cvSaveImage(out_edge_filename, &IplImage(masked_edges));
+        cvSaveImage(out_edge_filename, &IplImage(edges));
         cvSaveImage(out_iris_filename, &IplImage(cropped_frame));
         video_writer << temp_out_frame;
 
