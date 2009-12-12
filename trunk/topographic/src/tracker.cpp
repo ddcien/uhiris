@@ -29,7 +29,7 @@ Tracker::Tracker()
 
 Tracker::~Tracker() {}
 
-void Tracker::InitializeFrame( Mat img, vector<Point> &eyes )
+void Tracker::InitializeFrame( Mat input, vector<Point> &eyes )
 {
 	eyes.clear();
 
@@ -97,6 +97,8 @@ void Tracker::InitializeFrame( Mat img, vector<Point> &eyes )
 			labels.at<float>(i,j) = label;
 		}
 
+	CleanUpEyeVector(eyes);
+
 	//Dump2DMatrix("labels.txt", labels, CV_32FC1);
 	Mat label_map;
 	labels.convertTo(tmp, CV_8UC1);
@@ -148,3 +150,22 @@ Tracker::Topographic Tracker::TopographicClassification( Mat grad, double eval1,
 	else return UNKNOWN;
 }
 
+void Tracker::CleanUpEyeVector( vector<Point> &eyes )
+{
+	if (eyes.empty()) return;
+
+	vector<Point> clean;
+	clean.push_back(eyes.back());
+	eyes.pop_back();
+	while (!eyes.empty()) {
+		Point target = clean.back(), query = eyes.back();
+		while (sqrt(pow(static_cast<float>(target.x - query.x), 2) + pow(static_cast<float>(target.y - query.y), 2)) < 3) {
+			eyes.pop_back();
+			if (eyes.empty()) break;
+			query = eyes.back();
+		}
+		clean.push_back(eyes.back());
+		eyes.pop_back();
+	}
+	eyes = clean;
+}
