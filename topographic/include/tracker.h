@@ -17,10 +17,12 @@ public:
 		If no iris is located via Mutual Information search, try reinitialize.
 		Keep initializing until the iris is located.
 	*/
-	void InitializeFrame(Mat img, vector<Point> &eyes);
+	void InitializeFrame(Mat input, vector<Point> &eyes);
 
 private:
 	Topographic TopographicClassification(Mat grad, double eval1, double eval2, Mat evec1, Mat evec2);
+	void CleanUpEyeVector(vector<Point> &eyes);
+
 	float t_mag_;
 	float t_ev_;
 	float t_ge_;
