@@ -56,12 +56,17 @@ void Tracker::InitializeFrame( Mat input, vector<Point> &eyes )
 	filter2D(img, f01y, -1, h01_);
 	filter2D(img, f11xy, -1, h11_);
 	filter2D(img, f02y, -1, h02_);
+	//Dump2DMatrix("f10x.txt", f10x, CV_64FC1);
+	//Dump2DMatrix("f20x.txt", f20x, CV_64FC1);
+	//Dump2DMatrix("f01y.txt", f01y, CV_64FC1);
+	//Dump2DMatrix("f11xy.txt", f11xy, CV_64FC1);
+	//Dump2DMatrix("f02y.txt", f02y, CV_64FC1);
 
 	Mat labels(img.rows, img.cols, CV_32FC1);
 	Mat hessian(2, 2, CV_64FC1);
 	for (int i = 0; i < img.rows; ++i)
 		for (int j = 0; j < img.cols; ++j) {
-			/** remove small values */
+			/** remove small values ... or not */
 			double f10, f20, f01, f11, f02;
 			//f10x.at<double>(i,j) < myeps ? f10 = 0 : 
 				f10 = f10x.at<double>(i,j);
@@ -105,6 +110,8 @@ void Tracker::InitializeFrame( Mat input, vector<Point> &eyes )
 	namedWindow("Label Map", CV_WINDOW_AUTOSIZE);
 	equalizeHist(tmp, label_map);
 	imshow("Label Map", label_map);
+
+
 }
 
 Tracker::Topographic Tracker::TopographicClassification( Mat grad, double eval1, double eval2, Mat evec1, Mat evec2 )
@@ -155,17 +162,28 @@ void Tracker::CleanUpEyeVector( vector<Point> &eyes )
 	if (eyes.empty()) return;
 
 	vector<Point> clean;
-	clean.push_back(eyes.back());
-	eyes.pop_back();
-	while (!eyes.empty()) {
-		Point target = clean.back(), query = eyes.back();
-		while (sqrt(pow(static_cast<float>(target.x - query.x), 2) + pow(static_cast<float>(target.y - query.y), 2)) < 3) {
-			eyes.pop_back();
-			if (eyes.empty()) break;
-			query = eyes.back();
+	int ub = eyes.size();
+	Mat examined(ub, ub, CV_8UC1, Scalar(0));
+	int *mask = new int [ub];
+	memset(mask, 0, ub*sizeof(*mask));
+	
+	for (int i = 0; i < ub; ++i) {
+		examined.at<uchar>(i,i) = 1;
+		for (int j = 0; j < ub; ++j) {
+			if (mask[j] || examined.at<uchar>(i,j))
+				continue;
+			examined.at<uchar>(i,j) = 1;
+			examined.at<uchar>(j,i) = 1;
+			if (sqrt(pow(static_cast<float>(eyes[i].x - eyes[j].x), 2) + pow(static_cast<float>(eyes[i].y - eyes[j].y), 2)) < 3)
+				mask[j] = 1;
 		}
-		clean.push_back(eyes.back());
-		eyes.pop_back();
 	}
+
+	for (int i = 0; i < ub; ++i)
+		if (!mask[i])
+			clean.push_back(eyes[i]);
+
 	eyes = clean;
+
+	delete [] mask;
 }
