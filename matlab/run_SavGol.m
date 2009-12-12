@@ -6,13 +6,13 @@ A00 = 1; A10 = 2; A20 = 3; A01 = 4; A11 = 5; A02 = 6;
 
 myeps = 10^-6;
 
-[NamesCoefs, NamesTerms, XPow, YPow, SG] = SavGol(2,5);
-% SG = zeros(5,5,6);
-% SG(:,:,2) = sgsdf_2d2(-2:2,-2:2,2,2,1,0,1);
-% SG(:,:,3) = sgsdf_2d2(-2:2,-2:2,2,2,2,0,1);
-% SG(:,:,4) = sgsdf_2d2(-2:2,-2:2,2,2,0,1,1);
-% SG(:,:,5) = sgsdf_2d2(-2:2,-2:2,2,2,1,1,1);
-% SG(:,:,6) = sgsdf_2d2(-2:2,-2:2,2,2,0,2,1);
+% [NamesCoefs, NamesTerms, XPow, YPow, SG] = SavGol(2,5);
+SG = zeros(5,5,6);
+SG(:,:,2) = sgsdf_2d2(-2:2,-2:2,2,2,1,0,1);
+SG(:,:,3) = sgsdf_2d2(-2:2,-2:2,2,2,2,0,1);
+SG(:,:,4) = sgsdf_2d2(-2:2,-2:2,2,2,0,1,1);
+SG(:,:,5) = sgsdf_2d2(-2:2,-2:2,2,2,1,1,1);
+SG(:,:,6) = sgsdf_2d2(-2:2,-2:2,2,2,0,2,1);
 % 
 % SG(:,:,A10) = dlmread('h10.txt')';
 % SG(:,:,A20) = dlmread('h20.txt')';
@@ -21,7 +21,7 @@ myeps = 10^-6;
 % SG(:,:,A02) = dlmread('h02.txt')';
 
 
-mov = aviread('sample2.avi');
+mov = aviread('out_frame_big2.avi');
 num_of_frames = length(mov);
 frame = mov(10).cdata;
 % frame = imread('leye.jpg');
@@ -34,7 +34,7 @@ else
 end
 [rows cols] = size(img);
 
-g = fspecial('gaussian', 17, 3);
+g = fspecial('gaussian', 15, 2.5);
 img = imfilter(img, g, 'symmetric');
 img = imfilter(img, g, 'symmetric');
 % convolve the image with the computed set of filters to obtain the
@@ -43,19 +43,19 @@ num_of_coef = size(SG, 3);
 A = zeros(rows, cols, num_of_coef);
 for i = 2:num_of_coef
     % REMOVE the transpose if not computed from SavGol
-    A(:,:,i) = imfilter(img, SG(:,:,i)', 'symmetric');
+    A(:,:,i) = imfilter(img, SG(:,:,i), 'symmetric');
 end
-% A(:,:,A20) = A(:,:,A20)/2;
-% A(:,:,A02) = A(:,:,A02)/2;
-% A(A<myeps) = 0;
+A(:,:,A20) = A(:,:,A20)/2;
+A(:,:,A02) = A(:,:,A02)/2;
+A(abs(A)<myeps) = 0;
 
 %%%%%
-coef = squeeze(A(88,133,:));
+coef = squeeze(A(20,20,:));
 syms x y
 symb = [1 x x^2 y x*y y^2];
 fun = coef' * symb';
 ezsurf(fun,[-2 2 -2 2]); hold on;
-eyeimg = img(88+[-2:2], 133+[-2:2]);
+eyeimg = img(20+[-2:2], 20+[-2:2]);
 figure; surf(-2:2,-2:2,eyeimg); hold off;
 figure;
 %%%%%
