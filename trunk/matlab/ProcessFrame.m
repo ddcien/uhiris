@@ -1,34 +1,62 @@
-function [labels eye] = ProcessFrame(frame)
+function [labels eyes] = ProcessFrame(frame)
 global h20 h10 h01 h11 h02
+
+myeps = 10^-6;
+
+%%% Topographic labels
 UNKNOWN = 0; 
-PEAK = 1; PIT = 2; 
-RIDGESADDLE = 3; RAVINESADDLE = 4; 
-RIDGE = 5; RAVINE = 6; FLAT = 7; 
-CONVEXHILL = 8; CONCAVEHILL = 9;
-CONCAVESADDLEHILL = 10; CONVEXSADDLEHILL = 11; SLOPEHILL = 12;
+PEAK = 1; PIT = 2; RIDGE = 3; RAVINE = 4;
+RIDGESADDLE = 5; RAVINESADDLE = 6;
+CONVEXHILL = 7; CONCAVEHILL = 8;
+CONVEXSADDLEHILL = 9; CONCAVESADDLEHILL = 10;
+SLOPEHILL = 11; FLAT = 12; 
+
+%%% Empirical thresholds
 Tmag = 1.4; Tev = 1; Tge = 0;
+
+%%% Polynomial coefficient indices
+% a00 + a10 * x + a20 * x^2 + a01 * y + a11 * x * y + a02 * y^2
+A00 = 1; A10 = 2; A20 = 3; A01 = 4; A11 = 5; A02 = 6;
 
 if size(frame, 3) == 3
     img = double(rgb2gray(frame));
 else
     img = double(frame);
 end
+[rows cols] = size(img);
 
 g = fspecial('gaussian', 15, 2.5);
 img = imfilter(img, g, 'symmetric');
 img = imfilter(img, g, 'symmetric');
-f20x = imfilter(img,h20,'symmetric');
-f10x = imfilter(img,h10,'symmetric');
-f01y = imfilter(img,h01,'symmetric');
-f11xy = imfilter(img,h11,'symmetric');
-f02y = imfilter(img,h02,'symmetric');
+f10x = imfilter(img,h10,'symmetric'); f10x(abs(f10x)<myeps)=0;
+f20x = imfilter(img,h20,'symmetric'); f20x(abs(f20x)<myeps)=0;
+f01y = imfilter(img,h01,'symmetric'); f01y(abs(f01y)<myeps)=0;
+f11xy = imfilter(img,h11,'symmetric'); f11xy(abs(f11xy)<myeps)=0;
+f02y = imfilter(img,h02,'symmetric'); f02y(abs(f02y)<myeps)=0;
+
+%%%%%
+% A = zeros(rows, cols, 6);
+% A(:,:,A10) = f10x;
+% A(:,:,A20) = f20x / 2;
+% A(:,:,A01) = f01y;
+% A(:,:,A11) = f11xy;
+% A(:,:,A02) = f02y / 2;
+% loc = [195, 408];
+% coef = squeeze(A(loc(1),loc(2),:));
+% syms x y
+% symb = [1 x x^2 y x*y y^2];
+% fun = coef' * symb';
+% ezsurf(fun,[-2 2 -2 2]);
+% eyeimg = img(loc(1)+[-2:2],loc(2)+[-2:2]);
+% figure; surf(-2:2,-2:2,eyeimg);
+% figure;
+%%%%%
 
 imshow(frame); hold on;
 hessian = zeros(2);
-[rows cols] = size(img);
 labels = zeros(rows, cols);
 mag = sqrt(f10x.^2+f01y.^2);
-eye = [];
+eyes = [];
 for i = 1:rows
     for j = 1:cols
         hessian(1,1) = f20x(i,j);
@@ -45,7 +73,7 @@ for i = 1:rows
         elseif mag(i,j) < Tmag && ev(1) > Tev && ev(2) > Tev
             % pit
             plot(j,i,'r+');
-            eye = [eye; i j];
+            eyes = [eyes; i j];
             labels(i,j) = PIT;
         elseif mag(i,j) < Tmag && ev(1) * ev(2) < 0
             % saddle
@@ -81,9 +109,9 @@ for i = 1:rows
 %             plot(j,i,'mx');
             if abs(ev(1)) <= Tev && abs(ev(2)) <= Tev
                 labels(i,j) = SLOPEHILL;
-            elseif (ev(1) > Tev && ev(2) >= Tev) || (ev(1) >= Tev && ev(2) > Tev)
+            elseif (ev(1) > 0 && ev(2) >= 0) || (ev(1) >= 0 && ev(2) > 0)
                 labels(i,j) = CONVEXHILL;
-            elseif (ev(1) < -Tev && ev(2) <= -Tev) || (ev(1) <= -Tev && ev(2) < -Tev)
+            elseif (ev(1) < 0 && ev(2) <= 0) || (ev(1) <= 0 && ev(2) < 0)
                 labels(i,j) = CONCAVEHILL;
             elseif ev(1) * ev(2) < 0
                 if sum(ev) < 0
