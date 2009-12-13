@@ -104,6 +104,8 @@ void Tracker::InitializeFrame( Mat input, vector<Point> &eyes )
 
 	CleanUpEyeVector(eyes);
 
+	
+
 	//Dump2DMatrix("labels.txt", labels, CV_32FC1);
 	Mat label_map;
 	labels.convertTo(tmp, CV_8UC1);
@@ -174,7 +176,7 @@ void Tracker::CleanUpEyeVector( vector<Point> &eyes )
 				continue;
 			examined.at<uchar>(i,j) = 1;
 			examined.at<uchar>(j,i) = 1;
-			if (sqrt(pow(static_cast<float>(eyes[i].x - eyes[j].x), 2) + pow(static_cast<float>(eyes[i].y - eyes[j].y), 2)) < 3)
+			if (EuclideanDistance(eyes[i], eyes[j]) < 3)
 				mask[j] = 1;
 		}
 	}
@@ -186,4 +188,42 @@ void Tracker::CleanUpEyeVector( vector<Point> &eyes )
 	eyes = clean;
 
 	delete [] mask;
+}
+
+void Tracker::Classification( const Mat& labels, vector<Point> &eyes )
+{
+	if (eyes.empty()) return;
+
+	int num_of_candidates = eyes.size();
+	Mat examined(num_of_candidates, num_of_candidates, CV_8UC1, Scalar(0));
+
+	int height = labels.rows;
+	int width = labels.cols;
+
+	for (int i = 0; i < num_of_candidates; ++i) {
+		Point current = eyes[i];
+		examined.at<uchar>(i,i) = 1;
+		for (int j = 0; j < num_of_candidates; ++j) {
+			if (examined.at<uchar>(i,j))
+				continue;
+			examined.at<uchar>(i,j) = 1;
+			examined.at<uchar>(j,i) = 1;
+
+			Point target = eyes[j];
+			float dist = EuclideanDistance(current, target);
+			/** arguable thresholds for different face scales */
+			if (dist < 120 && dist > 40) {
+				float theta = atan2(static_cast<float>(current.x-target.x), static_cast<float>(current.y-target.y));
+				/** patch size*/
+				int rect_w = static_cast<int>(0.6 * dist + 0.5);
+				int rect_h = static_cast<int>(0.3 * dist + 0.5);
+
+			}
+		}
+	}
+}
+
+float Tracker::EuclideanDistance( const Point& p1, const Point& p2 )
+{
+	return sqrt(pow(static_cast<float>(p1.x - p2.x), 2) + pow(static_cast<float>(p1.y - p2.y), 2));
 }

@@ -22,6 +22,8 @@ public:
 private:
 	Topographic TopographicClassification(Mat grad, double eval1, double eval2, Mat evec1, Mat evec2);
 	void CleanUpEyeVector(vector<Point> &eyes);
+	void Classification(const Mat& labels, vector<Point> &eyes);
+	float EuclideanDistance(const Point& p1, const Point& p2);
 
 	float t_mag_;
 	float t_ev_;
