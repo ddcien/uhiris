@@ -2,6 +2,7 @@
 #define _TRACKER_H_
 #include <vector>
 #include "cv.h"
+#include "svm.h"
 
 using namespace cv;
 using std::vector;
@@ -26,6 +27,7 @@ private:
 	float EuclideanDistance(const Point& p1, const Point& p2);
 	Mat GetPatch( const Mat& whole, const Point& center, float dist, float theta);
 	Mat GetHistogram( const Mat& input, CvHistogram* hist);
+	bool CheckSVM( const Mat& hist);
 
 	float t_mag_;
 	float t_ev_;
@@ -36,6 +38,9 @@ private:
 	Mat h01_;
 	Mat h11_;
 	Mat h02_;
+
+	svm_model* svm_model_;
+	svm_node* svm_nodes_;
 
 	static const double myeps_;
 };
