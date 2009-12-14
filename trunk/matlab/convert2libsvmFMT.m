@@ -1,11 +1,11 @@
 close all
 clear
-training = dlmread('testing.txt');
+training = dlmread('multipie_training.txt');
 labels = training(:,1);
 training(:,1) = [];
 num_of_samples = length(labels);
 
-fid = fopen('libsvm_testing.txt','w');
+fid = fopen('multipie_libsvm_training.txt','w');
 for i = 1:num_of_samples
     if labels(i)
         class = 1;
