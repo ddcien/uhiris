@@ -197,6 +197,7 @@ void Tracker::Classification( const Mat& labels, vector<Point> &eyes )
 {
 	if (eyes.empty()) return;
 
+	vector<Point> output;
 	int num_of_candidates = eyes.size();
 	Mat examined(num_of_candidates, num_of_candidates, CV_8UC1, Scalar(0));
 
@@ -234,15 +235,21 @@ void Tracker::Classification( const Mat& labels, vector<Point> &eyes )
 				
 				Mat current_hist = GetHistogram(current_patch, hist);
 				Mat target_hist = GetHistogram(target_patch, hist);
-				bool foo1 = CheckSVM(current_hist);
-				bool foo2 = CheckSVM(target_hist);
-				if (foo1 || foo2)
-					cout << "Yeah!" << endl;
+				if (CheckSVM(current_hist)) {
+					cout << "This is an eye." << endl;
+					output.push_back(current);
+				}
+				if (CheckSVM(target_hist)) {
+					cout << "This is an eye." << endl;
+					output.push_back(target);
+				}
+				
 			}
 		}
 	}
 
 	cvReleaseHist(&hist);
+	eyes = output;
 }
 
 inline float Tracker::EuclideanDistance( const Point& p1, const Point& p2 )
