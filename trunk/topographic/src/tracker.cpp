@@ -1,12 +1,12 @@
 #include "tracker.h"
-//#include <iostream>
+#include <iostream>
 #include "differential.h"
 #include "utility.h"
 
 #include "highgui.h"
 
-//using std::cout;
-//using std::endl;
+using std::cout;
+using std::endl;
 
 const double Tracker::myeps_ = 10e-6;
 
@@ -25,9 +25,22 @@ Tracker::Tracker()
 	t_mag_ = 1.4;
 	t_ev_ = 1;
 	t_ge_ = 0;
+
+	if( (svm_model_ = svm_load_model("iris.model")) == NULL) {
+		cout << "Cannot load SVM model from iris.model, aborting..." << endl;
+		exit(-1);
+	}
+
+	svm_nodes_ = new svm_node[13];
 }
 
-Tracker::~Tracker() {}
+Tracker::~Tracker() {
+	if (svm_model_ != NULL)
+		svm_destroy_model(svm_model_);
+
+	if (svm_nodes_ != NULL)
+		delete [] svm_nodes_;
+}
 
 void Tracker::InitializeFrame( Mat input, vector<Point> &eyes )
 {
@@ -221,8 +234,10 @@ void Tracker::Classification( const Mat& labels, vector<Point> &eyes )
 				
 				Mat current_hist = GetHistogram(current_patch, hist);
 				Mat target_hist = GetHistogram(target_patch, hist);
-				// int res = MyAwesomeSVMClassifier(current_hist);
-				// int res = MyAwesomeSVMClassifier(target_hist);
+				bool foo1 = CheckSVM(current_hist);
+				bool foo2 = CheckSVM(target_hist);
+				if (foo1 || foo2)
+					cout << "Yeah!" << endl;
 			}
 		}
 	}
@@ -266,4 +281,17 @@ cv::Mat Tracker::GetHistogram( const Mat& input, CvHistogram* hist )
 	Mat hist_Mat = Mat(hist_MatND);
 	
 	return hist_Mat;
+}
+
+bool Tracker::CheckSVM( const Mat& hist )
+{
+	int ub = hist.rows;
+	for (int i = 0; i < ub; ++i) {
+		svm_nodes_[i].index = i;
+		svm_nodes_[i].value = hist.at<float>(i,0);
+	}
+	svm_nodes_[ub].index = -1;
+
+	bool res = svm_predict(svm_model_, svm_nodes_) == 1;
+	return res;
 }
