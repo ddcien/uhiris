@@ -22,8 +22,10 @@ public:
 private:
 	Topographic TopographicClassification(Mat grad, double eval1, double eval2, Mat evec1, Mat evec2);
 	void CleanUpEyeVector(vector<Point> &eyes);
-	void Classification(const Mat& labels, vector<Point> &eyes);
+	void Classification( const Mat& labels, vector<Point> &eyes);
 	float EuclideanDistance(const Point& p1, const Point& p2);
+	Mat GetPatch( const Mat& whole, const Point& center, float dist, float theta);
+	Mat GetHistogram( const Mat& input, CvHistogram* hist);
 
 	float t_mag_;
 	float t_ev_;
@@ -35,7 +37,7 @@ private:
 	Mat h11_;
 	Mat h02_;
 
-	static const double myeps;
+	static const double myeps_;
 };
 
 #endif
