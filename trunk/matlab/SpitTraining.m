@@ -1,7 +1,7 @@
 function SpitTraining(labels, eye)
 eye = CleanUp(eye);
 fid = fopen('training.txt','a');
-num_of_candidates = length(eye);
+num_of_candidates = size(eye,1);
 examined = zeros(num_of_candidates);
 patch_img = figure;
 label_img = figure; imshow(labels,[]); hold on
@@ -108,3 +108,5 @@ for i = 1:num_of_candidates
     figure(label_img); hold off; imshow(labels,[]); hold on
 end
 fclose(fid);
+close(label_img);
+close(patch_img);

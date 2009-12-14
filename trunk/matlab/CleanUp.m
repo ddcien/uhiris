@@ -1,5 +1,5 @@
 function clean = CleanUp(noisyarray)
-ub = length(noisyarray);
+ub = size(noisyarray,1);
 examined = zeros(ub,ub);
 mask = ones(ub, 1);
 for i = 1:ub

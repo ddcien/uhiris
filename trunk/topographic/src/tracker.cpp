@@ -8,7 +8,7 @@
 //using std::cout;
 //using std::endl;
 
-const double Tracker::myeps = 10e-6;
+const double Tracker::myeps_ = 10e-6;
 
 Tracker::Tracker()
 {
@@ -103,17 +103,7 @@ void Tracker::InitializeFrame( Mat input, vector<Point> &eyes )
 		}
 
 	CleanUpEyeVector(eyes);
-
-	
-
-	//Dump2DMatrix("labels.txt", labels, CV_32FC1);
-	Mat label_map;
-	labels.convertTo(tmp, CV_8UC1);
-	namedWindow("Label Map", CV_WINDOW_AUTOSIZE);
-	equalizeHist(tmp, label_map);
-	imshow("Label Map", label_map);
-
-
+	Classification(labels, eyes);
 }
 
 Tracker::Topographic Tracker::TopographicClassification( Mat grad, double eval1, double eval2, Mat evec1, Mat evec2 )
@@ -197,8 +187,20 @@ void Tracker::Classification( const Mat& labels, vector<Point> &eyes )
 	int num_of_candidates = eyes.size();
 	Mat examined(num_of_candidates, num_of_candidates, CV_8UC1, Scalar(0));
 
-	int height = labels.rows;
-	int width = labels.cols;
+	/** prepare the histogram */
+	int hist_size = 12;
+	float hist_range[] = {1, 13};
+	float* ranges[] = {hist_range};
+	CvHistogram *hist;
+	hist = cvCreateHist(1, &hist_size, CV_HIST_ARRAY, ranges, 1);
+
+	/////
+	Mat label_map, tmp;
+	labels.convertTo(tmp, CV_8UC1);
+	namedWindow("Label Map", CV_WINDOW_AUTOSIZE);
+	equalizeHist(tmp, label_map);
+	imshow("Label Map", label_map);
+	/////
 
 	for (int i = 0; i < num_of_candidates; ++i) {
 		Point current = eyes[i];
@@ -213,17 +215,55 @@ void Tracker::Classification( const Mat& labels, vector<Point> &eyes )
 			float dist = EuclideanDistance(current, target);
 			/** arguable thresholds for different face scales */
 			if (dist < 120 && dist > 40) {
-				float theta = atan2(static_cast<float>(current.x-target.x), static_cast<float>(current.y-target.y));
-				/** patch size*/
-				int rect_w = static_cast<int>(0.6 * dist + 0.5);
-				int rect_h = static_cast<int>(0.3 * dist + 0.5);
-
+				float theta = -1 * atan2(static_cast<float>(current.x-target.x), static_cast<float>(current.y-target.y));
+				Mat current_patch = GetPatch(labels, current, dist, theta);
+				Mat target_patch = GetPatch(labels, target, dist, theta);
+				
+				Mat current_hist = GetHistogram(current_patch, hist);
+				Mat target_hist = GetHistogram(target_patch, hist);
+				// int res = MyAwesomeSVMClassifier(current_hist);
+				// int res = MyAwesomeSVMClassifier(target_hist);
 			}
 		}
 	}
+
+	cvReleaseHist(&hist);
 }
 
-float Tracker::EuclideanDistance( const Point& p1, const Point& p2 )
+inline float Tracker::EuclideanDistance( const Point& p1, const Point& p2 )
 {
 	return sqrt(pow(static_cast<float>(p1.x - p2.x), 2) + pow(static_cast<float>(p1.y - p2.y), 2));
+}
+
+cv::Mat Tracker::GetPatch(const Mat& whole, const Point& center, float dist, float theta )
+{
+	int rows = whole.rows;
+	int cols = whole.cols;
+
+	/** patch size*/
+	int rect_w = static_cast<int>(0.6 * dist + 0.5);
+	int rect_h = static_cast<int>(0.3 * dist + 0.5);
+	Mat patch(rect_h, rect_w, whole.type(), Scalar(0));
+
+	for (int r = 0; r < rect_h; ++r)
+		for (int c = 0; c < rect_w; ++c) {
+			int old_c = static_cast<int>((r-rect_h/2.0f) * cos(theta) - (c-rect_w/2.0f) * sin(theta) + center.x + 0.5);
+			int old_r = static_cast<int>((c-rect_w/2.0f) * cos(theta) + (r-rect_h/2.0f) * sin(theta) + center.y + 0.5);
+			if (old_r < cols && old_r >= 0 && old_c < rows && old_c >= 0)
+				patch.at<float>(r, c) = whole.at<float>(old_c, old_r);
+		}
+
+	return patch;
+}
+
+cv::Mat Tracker::GetHistogram( const Mat& input, CvHistogram* hist )
+{
+
+	IplImage *img = &(IplImage(input));
+	cvCalcHist(&img, hist, 0, NULL);
+	cvNormalizeHist(hist, 1);
+	MatND hist_MatND(&(hist->mat));
+	Mat hist_Mat = Mat(hist_MatND);
+	
+	return hist_Mat;
 }

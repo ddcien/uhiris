@@ -9,16 +9,20 @@ h11 = sgsdf_2d2(-2:2,-2:2,2,2,1,1,1);
 h02 = sgsdf_2d2(-2:2,-2:2,2,2,0,2,1);
 
 % rgb = imread('smallleye.jpg');
-mov = aviread('out_frame_big.avi');
-num_of_frames = length(mov);
+% mov = aviread('out_frame_big.avi');
+% num_of_frames = length(mov);
 % M(num_of_frames) = struct('cdata',[],'colormap',[]);
 
-for i = 290:290
-    rgb = mov(i).cdata;
+images = dir('data/*.jpg');
+num_of_images = length(images);
+
+for i = 224:num_of_images
+    rgb = imread(fullfile('data',images(i).name));
+%     rgb = mov(i).cdata;
     [labels eyes] = ProcessFrame(rgb);
 %     figure; imshow(labels, []);
     SpitTraining(labels, eyes);
 %     M(k) = getframe;
-
+    
 end
 % movie(M);     
