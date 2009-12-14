@@ -1,6 +1,6 @@
 close all
 clear
-training = dlmread('multipie_training.txt');
+training = dlmread('my_training.txt');
 labels = training(:,1);
 training(:,1) = [];
 num_of_samples = length(labels);

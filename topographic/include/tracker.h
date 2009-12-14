@@ -18,7 +18,10 @@ public:
 		If no iris is located via Mutual Information search, try reinitialize.
 		Keep initializing until the iris is located.
 	*/
+	void InitializeFrame(Mat input, const Point& reference, bool accumu, vector<Point> &eyes);
+	void InitializeFrame(Mat input, const Point& reference, vector<Point> &eyes);
 	void InitializeFrame(Mat input, vector<Point> &eyes);
+	void TrackEyes(Mat input, vector<Point> &eyes);
 
 private:
 	Topographic TopographicClassification(Mat grad, double eval1, double eval2, Mat evec1, Mat evec2);
@@ -27,7 +30,8 @@ private:
 	float EuclideanDistance(const Point& p1, const Point& p2);
 	Mat GetPatch( const Mat& whole, const Point& center, float dist, float theta);
 	Mat GetHistogram( const Mat& input, CvHistogram* hist);
-	bool CheckSVM( const Mat& hist);
+	bool CheckLIBSVM( const Mat& hist);
+	bool CheckSVMLIGHT( const Mat& hist);
 
 	float t_mag_;
 	float t_ev_;
@@ -41,6 +45,8 @@ private:
 
 	svm_model* svm_model_;
 	svm_node* svm_nodes_;
+
+	int svmlight_model_;
 
 	static const double myeps_;
 };

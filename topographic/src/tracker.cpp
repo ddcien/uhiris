@@ -2,7 +2,7 @@
 #include <iostream>
 #include "differential.h"
 #include "utility.h"
-
+#include "SvmLightLib.h"
 #include "highgui.h"
 
 using std::cout;
@@ -26,12 +26,14 @@ Tracker::Tracker()
 	t_ev_ = 1;
 	t_ge_ = 0;
 
-	if( (svm_model_ = svm_load_model("iris.model")) == NULL) {
+	if( (svm_model_ = svm_load_model("my_libsvm_training.model")) == NULL) {
 		cout << "Cannot load SVM model from iris.model, aborting..." << endl;
-		exit(-1);
+		svm_nodes_ = NULL;
 	}
+	else svm_nodes_ = new svm_node[13];
 
-	svm_nodes_ = new svm_node[13];
+	svmlight_model_ = -1;
+	svmlight_model_ = SVM::LoadModel("B_model.txt");
 }
 
 Tracker::~Tracker() {
@@ -40,11 +42,24 @@ Tracker::~Tracker() {
 
 	if (svm_nodes_ != NULL)
 		delete [] svm_nodes_;
+
+	if (svmlight_model_ != -1)
+		SVM::DeleteModel(svmlight_model_);
 }
 
 void Tracker::InitializeFrame( Mat input, vector<Point> &eyes )
 {
-	eyes.clear();
+	InitializeFrame(input, Point(0,0), false, eyes);
+}
+
+void Tracker::InitializeFrame(Mat input, const Point& reference, vector<Point> &eyes) {
+	InitializeFrame(input, reference, false, eyes);
+}
+
+void Tracker::InitializeFrame( Mat input, const Point& reference, bool accumu, vector<Point> &eyes)
+{
+	if (!accumu)
+		eyes.clear();
 
 	Mat img, tmp, gray;
 	if (input.channels() == 3) {
@@ -111,12 +126,12 @@ void Tracker::InitializeFrame( Mat input, vector<Point> &eyes )
 			//PrintMat(&CvMat(evec2));
 			Topographic label = TopographicClassification(grad, eval1, eval2, evec1, evec2);
 			if (label == PIT)
-				eyes.push_back(Point(i,j));
+				eyes.push_back(Point(i+reference.x,j+reference.y));
 			labels.at<float>(i,j) = label;
 		}
 
 	CleanUpEyeVector(eyes);
-	Classification(labels, eyes);
+	//Classification(labels, eyes);
 }
 
 Tracker::Topographic Tracker::TopographicClassification( Mat grad, double eval1, double eval2, Mat evec1, Mat evec2 )
@@ -235,11 +250,11 @@ void Tracker::Classification( const Mat& labels, vector<Point> &eyes )
 				
 				Mat current_hist = GetHistogram(current_patch, hist);
 				Mat target_hist = GetHistogram(target_patch, hist);
-				if (CheckSVM(current_hist)) {
+				if (CheckLIBSVM(current_hist)) {
 					cout << "This is an eye." << endl;
 					output.push_back(current);
 				}
-				if (CheckSVM(target_hist)) {
+				if (CheckLIBSVM(target_hist)) {
 					cout << "This is an eye." << endl;
 					output.push_back(target);
 				}
@@ -290,8 +305,9 @@ cv::Mat Tracker::GetHistogram( const Mat& input, CvHistogram* hist )
 	return hist_Mat;
 }
 
-bool Tracker::CheckSVM( const Mat& hist )
+bool Tracker::CheckLIBSVM( const Mat& hist )
 {
+	if (svm_model_ == NULL) return false;
 	int ub = hist.rows;
 	for (int i = 0; i < ub; ++i) {
 		svm_nodes_[i].index = i;
@@ -301,4 +317,42 @@ bool Tracker::CheckSVM( const Mat& hist )
 
 	bool res = svm_predict(svm_model_, svm_nodes_) == 1;
 	return res;
+}
+
+bool Tracker::CheckSVMLIGHT( const Mat& hist )
+{
+	int features[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+	float weights[12];
+	for (int i = 0; i < 12; ++i)
+		weights[i] = hist.at<float>(i,0);
+
+	int id = SVM::NewFeatureVector(12, features, weights, 0.0);
+
+	SVM::Classify(svmlight_model_, 1, &id);
+
+	double label = SVM::GetFeatureVectorClassifScore(id, 0);
+
+	return (label > 0? 1: label < 0? -1 : 0);
+}
+
+void Tracker::TrackEyes( Mat input, vector<Point> &eyes )
+{
+	int rows = input.rows;
+	int cols = input.cols;
+	int num_of_points = eyes.size();
+	int halfsize = 16;
+	vector<Point> new_eyes;
+	for (int i = 0; i < num_of_points; ++i) {
+		Point current = eyes[i];
+		int row_start, row_end, col_start, col_end;
+		current.x - halfsize < 0 ? row_start = 0 : row_start = current.x - halfsize;
+		current.x + halfsize >= rows ? row_end = rows - 1 : row_end = current.x + halfsize;
+		current.y - halfsize < 0 ? col_start = 0 : col_start = current.y - halfsize;
+		current.y + halfsize >= cols ? col_end = cols - 1 : col_end = current.y + halfsize;
+		Range row_range(row_start, row_end);
+		Range col_range(col_start, col_end);
+		Mat roi(input, row_range, col_range);
+		InitializeFrame(roi, Point(row_start, col_start), true, new_eyes);
+	}
+	eyes = new_eyes;
 }
