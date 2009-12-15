@@ -16,7 +16,7 @@ h02 = sgsdf_2d2(-2:2,-2:2,2,2,0,2,1);
 images = dir('data/*.jpg');
 num_of_images = length(images);
 
-for i = 2:num_of_images
+for i = 1:num_of_images
     rgb = imread(fullfile('data',images(i).name));
     fprintf('Frame %d\n',i);
 %     rgb = mov(i).cdata;
