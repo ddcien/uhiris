@@ -27,7 +27,7 @@ Tracker::Tracker()
 	t_ge_ = 0;
 
 	if( (svm_model_ = svm_load_model("my_libsvm_training.model")) == NULL) {
-		cout << "Cannot load SVM model from iris.model." << endl;
+		//cout << "Cannot load SVM model from iris.model." << endl;
 		svm_nodes_ = NULL;
 	}
 	else svm_nodes_ = new svm_node[13];
