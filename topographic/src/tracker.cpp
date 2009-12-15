@@ -33,7 +33,7 @@ Tracker::Tracker()
 	else svm_nodes_ = new svm_node[13];
 
 	svmlight_model_ = -1;
-	svmlight_model_ = SVM::LoadModel("B_model.txt");
+	svmlight_model_ = SVM::LoadModel("RBFmodel.txt");
 }
 
 Tracker::~Tracker() {
@@ -58,80 +58,10 @@ void Tracker::InitializeFrame(Mat input, const Point& reference, vector<Point> &
 
 void Tracker::InitializeFrame( Mat input, const Point& reference, bool accumu, vector<Point> &eyes)
 {
-	if (!accumu)
-		eyes.clear();
-
-	Mat img, tmp, gray;
-	if (input.channels() == 3) {
-		cvtColor(input, tmp, CV_RGB2GRAY);
-		tmp.convertTo(gray, CV_64FC1);
-	}
-	else
-		input.convertTo(gray, CV_64FC1);
-
-	/**
-			By applying Gaussian Blur twice, many false detections (most likely due to noise) can be eliminated.
-			However, at the same time we comprised the robustness against pose changes: if the eye is close to the
-			facial boundary, it will be smoothed out (blend into the background).
-			Applying smoothing only once has the opposite effect. Hence there is a trade-off here.
-	*/
-	GaussianBlur(gray, tmp, Size(15, 15), 2.5);
-	GaussianBlur(tmp, img, Size(15, 15), 2.5);
-
-	Mat f20x, f11xy, f02y, f10x, f01y;
-	filter2D(img, f10x, -1, h10_);
-	filter2D(img, f20x, -1, h20_);
-	filter2D(img, f01y, -1, h01_);
-	filter2D(img, f11xy, -1, h11_);
-	filter2D(img, f02y, -1, h02_);
-	//Dump2DMatrix("f10x.txt", f10x, CV_64FC1);
-	//Dump2DMatrix("f20x.txt", f20x, CV_64FC1);
-	//Dump2DMatrix("f01y.txt", f01y, CV_64FC1);
-	//Dump2DMatrix("f11xy.txt", f11xy, CV_64FC1);
-	//Dump2DMatrix("f02y.txt", f02y, CV_64FC1);
-
-	Mat labels(img.rows, img.cols, CV_32FC1);
-	Mat hessian(2, 2, CV_64FC1);
-	for (int i = 0; i < img.rows; ++i)
-		for (int j = 0; j < img.cols; ++j) {
-			/** remove small values ... or not */
-			double f10, f20, f01, f11, f02;
-			//f10x.at<double>(i,j) < myeps ? f10 = 0 : 
-				f10 = f10x.at<double>(i,j);
-			//f20x.at<double>(i,j) < myeps ? f20 = 0 : 
-				f20 = f20x.at<double>(i,j);
-			//f01y.at<double>(i,j) < myeps ? f01 = 0 : 
-				f01 = f01y.at<double>(i,j);
-			//f11xy.at<double>(i,j) < myeps ? f11 = 0 : 
-				f11 = f11xy.at<double>(i,j);
-			//f02y.at<double>(i,j) < myeps ? f02 = 0 : 
-				f02 = f02y.at<double>(i,j);
-
-			Mat eigenvalues, eigenvectors;
-			hessian.at<double>(0,0) = f20;
-			hessian.at<double>(0,1) = f11;
-			hessian.at<double>(1,0) = f11;
-			hessian.at<double>(1,1) = f02;
-			//PrintMat(&CvMat(hessian));
-			eigen(hessian, eigenvalues, eigenvectors);
-			Mat grad(1, 2, CV_64FC1);
-			grad.at<double>(0, 0) = f10;
-			grad.at<double>(0, 1) = f01;
-			double eval1 = eigenvalues.at<double>(0,0);
-			double eval2 = eigenvalues.at<double>(1,0);
-			//PrintMat(&CvMat(eigenvectors));
-			Mat evec1 = eigenvectors.row(0);
-			//PrintMat(&CvMat(evec1));
-			Mat evec2 = eigenvectors.row(1);
-			//PrintMat(&CvMat(evec2));
-			Topographic label = TopographicClassification(grad, eval1, eval2, evec1, evec2);
-			if (label == PIT)
-				eyes.push_back(Point(i+reference.x,j+reference.y));
-			labels.at<float>(i,j) = label;
-		}
-
+	eyes.clear();
+	Mat labels = GenerateLabelMap(input, eyes);
 	CleanUpEyeVector(eyes);
-	//Classification(labels, eyes);
+	Classification(labels, eyes);
 }
 
 Tracker::Topographic Tracker::TopographicClassification( Mat grad, double eval1, double eval2, Mat evec1, Mat evec2 )
@@ -224,11 +154,11 @@ void Tracker::Classification( const Mat& labels, vector<Point> &eyes )
 	hist = cvCreateHist(1, &hist_size, CV_HIST_ARRAY, ranges, 1);
 
 	/////
-	Mat label_map, tmp;
-	labels.convertTo(tmp, CV_8UC1);
-	namedWindow("Label Map", CV_WINDOW_AUTOSIZE);
-	equalizeHist(tmp, label_map);
-	imshow("Label Map", label_map);
+	//Mat label_map, tmp;
+	//labels.convertTo(tmp, CV_8UC1);
+	//namedWindow("Label Map", CV_WINDOW_AUTOSIZE);
+	//equalizeHist(tmp, label_map);
+	//imshow("Label Map", label_map);
 	/////
 
 	for (int i = 0; i < num_of_candidates; ++i) {
@@ -250,12 +180,12 @@ void Tracker::Classification( const Mat& labels, vector<Point> &eyes )
 				
 				Mat current_hist = GetHistogram(current_patch, hist);
 				Mat target_hist = GetHistogram(target_patch, hist);
-				if (CheckLIBSVM(current_hist)) {
-					cout << "This is an eye." << endl;
+				if (CheckSVMLIGHT(current_hist)) {
+					//cout << "This is an eye." << endl;
 					output.push_back(current);
 				}
-				if (CheckLIBSVM(target_hist)) {
-					cout << "This is an eye." << endl;
+				if (CheckSVMLIGHT(target_hist)) {
+					//cout << "This is an eye." << endl;
 					output.push_back(target);
 				}
 				
@@ -340,10 +270,13 @@ void Tracker::TrackEyes( Mat input, vector<Point> &eyes )
 	int rows = input.rows;
 	int cols = input.cols;
 	int num_of_points = eyes.size();
-	int halfsize = 16;
+	int halfsize = 50;
+	vector<Point> pits;
 	vector<Point> new_eyes;
+	//cout << "Eyes: " << endl;
 	for (int i = 0; i < num_of_points; ++i) {
 		Point current = eyes[i];
+		//cout << eyes[i].x << " " << eyes[i].y << endl;
 		int row_start, row_end, col_start, col_end;
 		current.x - halfsize < 0 ? row_start = 0 : row_start = current.x - halfsize;
 		current.x + halfsize >= rows ? row_end = rows - 1 : row_end = current.x + halfsize;
@@ -352,7 +285,87 @@ void Tracker::TrackEyes( Mat input, vector<Point> &eyes )
 		Range row_range(row_start, row_end);
 		Range col_range(col_start, col_end);
 		Mat roi(input, row_range, col_range);
-		InitializeFrame(roi, Point(row_start, col_start), true, new_eyes);
+		Mat labels = GenerateLabelMap(roi, pits);
+		for (int j = 0; j < pits.size(); ++j)
+			new_eyes.push_back(Point(pits[j].x+row_start, pits[j].y+col_start));
+		pits.clear();
 	}
+	CleanUpEyeVector(new_eyes);
+	//cout << "New Eyes: " << endl;
+	//for (int i = 0; i < new_eyes.size(); ++i)
+	//	cout << new_eyes[i].x << " " << new_eyes[i].y << endl;
 	eyes = new_eyes;
+}
+
+cv::Mat Tracker::GenerateLabelMap( Mat input, vector<Point> &pits )
+{
+	Mat img, tmp, gray;
+	if (input.channels() == 3) {
+		cvtColor(input, tmp, CV_RGB2GRAY);
+		tmp.convertTo(gray, CV_64FC1);
+	}
+	else
+		input.convertTo(gray, CV_64FC1);
+
+	/**
+			By applying Gaussian Blur twice, many false detections (most likely due to noise) can be eliminated.
+			However, at the same time we comprised the robustness against pose changes: if the eye is close to the
+			facial boundary, it will be smoothed out (blend into the background).
+			Applying smoothing only once has the opposite effect. Hence there is a trade-off here.
+	*/
+	GaussianBlur(gray, tmp, Size(15, 15), 2.5);
+	GaussianBlur(tmp, img, Size(15, 15), 2.5);
+
+	Mat f20x, f11xy, f02y, f10x, f01y;
+	filter2D(img, f10x, -1, h10_);
+	filter2D(img, f20x, -1, h20_);
+	filter2D(img, f01y, -1, h01_);
+	filter2D(img, f11xy, -1, h11_);
+	filter2D(img, f02y, -1, h02_);
+	//Dump2DMatrix("f10x.txt", f10x, CV_64FC1);
+	//Dump2DMatrix("f20x.txt", f20x, CV_64FC1);
+	//Dump2DMatrix("f01y.txt", f01y, CV_64FC1);
+	//Dump2DMatrix("f11xy.txt", f11xy, CV_64FC1);
+	//Dump2DMatrix("f02y.txt", f02y, CV_64FC1);
+
+	Mat labels(img.rows, img.cols, CV_32FC1);
+	Mat hessian(2, 2, CV_64FC1);
+	for (int i = 0; i < img.rows; ++i)
+		for (int j = 0; j < img.cols; ++j) {
+			/** remove small values ... or not */
+			double f10, f20, f01, f11, f02;
+			//f10x.at<double>(i,j) < myeps ? f10 = 0 : 
+				f10 = f10x.at<double>(i,j);
+			//f20x.at<double>(i,j) < myeps ? f20 = 0 : 
+				f20 = f20x.at<double>(i,j);
+			//f01y.at<double>(i,j) < myeps ? f01 = 0 : 
+				f01 = f01y.at<double>(i,j);
+			//f11xy.at<double>(i,j) < myeps ? f11 = 0 : 
+				f11 = f11xy.at<double>(i,j);
+			//f02y.at<double>(i,j) < myeps ? f02 = 0 : 
+				f02 = f02y.at<double>(i,j);
+
+			Mat eigenvalues, eigenvectors;
+			hessian.at<double>(0,0) = f20;
+			hessian.at<double>(0,1) = f11;
+			hessian.at<double>(1,0) = f11;
+			hessian.at<double>(1,1) = f02;
+			//PrintMat(&CvMat(hessian));
+			eigen(hessian, eigenvalues, eigenvectors);
+			Mat grad(1, 2, CV_64FC1);
+			grad.at<double>(0, 0) = f10;
+			grad.at<double>(0, 1) = f01;
+			double eval1 = eigenvalues.at<double>(0,0);
+			double eval2 = eigenvalues.at<double>(1,0);
+			//PrintMat(&CvMat(eigenvectors));
+			Mat evec1 = eigenvectors.row(0);
+			//PrintMat(&CvMat(evec1));
+			Mat evec2 = eigenvectors.row(1);
+			//PrintMat(&CvMat(evec2));
+			Topographic label = TopographicClassification(grad, eval1, eval2, evec1, evec2);
+			if (label == PIT)
+				pits.push_back(Point(i,j));
+			labels.at<float>(i,j) = label;
+		}
+	return labels;
 }
