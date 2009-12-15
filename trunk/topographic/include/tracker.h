@@ -32,6 +32,7 @@ private:
 	Mat GetHistogram( const Mat& input, CvHistogram* hist);
 	bool CheckLIBSVM( const Mat& hist);
 	bool CheckSVMLIGHT( const Mat& hist);
+	Mat GenerateLabelMap(Mat input, vector<Point> &pits);
 
 	float t_mag_;
 	float t_ev_;

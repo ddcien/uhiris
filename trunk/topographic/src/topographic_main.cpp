@@ -19,6 +19,7 @@ int main(int argc, char** argv) {
 
 	Tracker tracker;
 	vector<Point> eyes;
+	int num_of_candidates = eyes.size();
 		
 	VideoCapture cap(0);
 	if (!cap.isOpened()) return -1;
@@ -30,21 +31,18 @@ int main(int argc, char** argv) {
 	namedWindow("Input", CV_WINDOW_AUTOSIZE);
 
 	Mat rgb;
-	cap >> rgb;
+	//cap >> rgb;
 	//rgb = imread("out_frame_big2_100.jpg");
-	tracker.InitializeFrame(rgb, eyes);
-	int num_of_candidates = eyes.size();
-	for (int i = 0; i < num_of_candidates; ++i)
-		circle(rgb, Point(eyes[i].y,eyes[i].x), 5, CV_RGB(0,255,0));
-	imshow("Input", rgb);
 	//waitKey();
 
 	for (;;) {
 
 		cap >> rgb;
-		//tracker.TrackEyes(rgb, eyes);
-		tracker.InitializeFrame(rgb, eyes);
-		int num_of_candidates = eyes.size();
+		if (num_of_candidates < 2)
+			tracker.InitializeFrame(rgb, eyes);
+		else
+			tracker.TrackEyes(rgb, eyes);
+		num_of_candidates = eyes.size();
 		for (int i = 0; i < num_of_candidates; ++i)
 			circle(rgb, Point(eyes[i].y,eyes[i].x), 5, CV_RGB(0,255,0));
 		imshow("Input", rgb);
