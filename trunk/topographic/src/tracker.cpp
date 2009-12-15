@@ -27,7 +27,7 @@ Tracker::Tracker()
 	t_ge_ = 0;
 
 	if( (svm_model_ = svm_load_model("my_libsvm_training.model")) == NULL) {
-		cout << "Cannot load SVM model from iris.model, aborting..." << endl;
+		cout << "Cannot load SVM model from iris.model." << endl;
 		svm_nodes_ = NULL;
 	}
 	else svm_nodes_ = new svm_node[13];
@@ -47,16 +47,7 @@ Tracker::~Tracker() {
 		SVM::DeleteModel(svmlight_model_);
 }
 
-void Tracker::InitializeFrame( Mat input, vector<Point> &eyes )
-{
-	InitializeFrame(input, Point(0,0), false, eyes);
-}
-
-void Tracker::InitializeFrame(Mat input, const Point& reference, vector<Point> &eyes) {
-	InitializeFrame(input, reference, false, eyes);
-}
-
-void Tracker::InitializeFrame( Mat input, const Point& reference, bool accumu, vector<Point> &eyes)
+void Tracker::InitializeFrame( Mat input, vector<Point> &eyes)
 {
 	eyes.clear();
 	Mat labels = GenerateLabelMap(input, eyes);
@@ -270,7 +261,7 @@ void Tracker::TrackEyes( Mat input, vector<Point> &eyes )
 	int rows = input.rows;
 	int cols = input.cols;
 	int num_of_points = eyes.size();
-	int halfsize = 50;
+	int halfsize = 32;
 	vector<Point> pits;
 	vector<Point> new_eyes;
 	//cout << "Eyes: " << endl;

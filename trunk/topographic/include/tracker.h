@@ -18,8 +18,6 @@ public:
 		If no iris is located via Mutual Information search, try reinitialize.
 		Keep initializing until the iris is located.
 	*/
-	void InitializeFrame(Mat input, const Point& reference, bool accumu, vector<Point> &eyes);
-	void InitializeFrame(Mat input, const Point& reference, vector<Point> &eyes);
 	void InitializeFrame(Mat input, vector<Point> &eyes);
 	void TrackEyes(Mat input, vector<Point> &eyes);
 
