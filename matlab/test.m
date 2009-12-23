@@ -24,7 +24,7 @@ for i = 1:num_of_images
     [labels eyes] = ProcessFrame(rgb);
 %     figure; imshow(labels, []);
 %     SpitTraining(labels, eyes);
-%     M(k) = getframe;
+%     M(i) = getframe;
     
 end
 % movie(M);     
