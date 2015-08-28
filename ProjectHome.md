@@ -1,0 +1,1 @@
+This project will deal with iris detection and segmentation on 2D image with different resolutions and illumination conditions, where subject(s) may also have pose variations. Ideally the detection (only the bounding boxes) should be done in real time say if a video sequence is supplied. For high resolution images, refined segmentation needs to be done.
